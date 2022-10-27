@@ -9,7 +9,7 @@
 %token CALL DEFINE GIVES RETURN
 %token NUMBER BOOL CHAR STRING LIST
 %token NONE
-%token SAY
+%token USE SAY
 %token EOF
 %token <float> NUMBERLIT
 %token <bool> BOOLLIT
@@ -62,6 +62,13 @@ expr_rule:
   | LPAREN expr_rule RPAREN    { $2 }
 
 stmt_rule:
-  | ID IS expr_rule { Asn ($1, $3) }
+  | dtype ID IS expr_rule { Asn ($1, $2, $4) }
   | SAY expr_rule   { Say $2 }
+  
+dtype:
+  | NUMBER     { Number }
+  | BOOL       { Bool }
+  | CHAR       { Char }
+  | STRING     { String }
+  | dtype LIST { List $1 }
   

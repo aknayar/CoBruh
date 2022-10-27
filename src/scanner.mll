@@ -1,3 +1,7 @@
+{
+  open Parser
+}
+
 let letter = ['a'-'z' 'A'-'Z']
 let digit = ['0'-'9']
 let ascii = [' '-'!' '#'-'[' ']'-'~']
@@ -68,11 +72,11 @@ rule token = parse
 
 (* Literals *)
 | "none"           { NONE }
-| number as lex    { NUMBERLIT(lex) }
+| number as lex    { NUMBERLIT(float_of_string lex) }
 | "true"           { BOOLLIT(true) }
 | "false"          { BOOLLIT(false) }
 | string as lex    { STRINGLIT(lex) }
-| character as lex { CHARLIT(lex) }
+| character as lex { CHARLIT(lex.[0]) }
 | id as lex        { ID(lex) }
 
 | eof          {EOF}
