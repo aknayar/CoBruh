@@ -15,7 +15,7 @@ let do_stmt = function
   | Asn(data_type, name, value) -> print_endline "Assignment"
   | Say(expr) -> (
       match expr with
-        | NumberLit n -> print_float n
+        | NumberLit n -> print_endline (string_of_float n)
         | BoolLit b -> if b then print_endline "true" else print_endline "false"
         | StringLit s -> print_endline s
         | CharLit c -> print_char c
