@@ -56,6 +56,7 @@ rule token = parse
 | "return" { RETURN }
 
 (* Builtin Functions *)
+| "use" { USE }
 | "say" { SAY }
 
 (* Data Types *)
