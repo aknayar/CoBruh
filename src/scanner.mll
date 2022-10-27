@@ -2,7 +2,8 @@ let letter = ['a'-'z' 'A'-'Z']
 let digit = ['0'-'9']
 let ascii = [' '-'!' '#'-'[' ']'-'~']
 
-let number = digit+ | (digit+ '.' digit*) | (digit* '.' digit+)
+let exponent = ('E' | 'e') digit+
+let number = digit+ ('.' digit+)? exponent?
 let id = letter (letter | digit | '_')*
 let character = ''' ascii '''
 let string = '"' ascii* '"'
@@ -20,6 +21,7 @@ rule token = parse
 | '.' { PERIOD }
 | ',' { COMMA }
 | ':' { COLON }
+| '|' { PIPE }
 
 (* Operators *)
 | "is"  { IS }
@@ -45,12 +47,16 @@ rule token = parse
 | "loop" { LOOP }
 | "in"   { IN }
 | "to"   { TO }
+| "by"   { BY }
 
 (* Functions *)
 | "call"   { CALL }
 | "define" { DEFINE }
 | "->"     { GIVES }
 | "return" { RETURN }
+
+(* Builtin Functions *)
+| "say" { SAY }
 
 (* Data Types *)
 | "number"    { NUMBER }
@@ -64,16 +70,14 @@ rule token = parse
 | number as lex    { NUMBERLIT(lex) }
 | "true"           { BOOLLIT(true) }
 | "false"          { BOOLLIT(false) }
-| character as lex { CHARLIT(lex) }
 | string as lex    { STRINGLIT(lex) }
+| character as lex { CHARLIT(lex) }
 | id as lex        { ID(lex) }
-
-(* Common Functions *)
-| "say" { SAY }
 
 | eof          {EOF}
 | ('"' | ''')  { raise (Failure("Mismatched quotation")) }
 | _            { raise (Failure("Illegal character")) }
+
 and comment = parse
   '\n' { token lexbuf } (* comment ends at newline *)
 | _    { comment lexbuf }
