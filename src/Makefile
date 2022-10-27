@@ -1,5 +1,5 @@
 .PHONY: all
-all: ast.ml scanner.mll parser.mly
+all: ast.ml scanner.mll parser.mly test.ml
 	ocamlc -c ast.ml
 	ocamllex scanner.mll
 	ocamlyacc parser.mly
