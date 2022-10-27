@@ -1,0 +1,30 @@
+type dtype = Number | Bool | Char | String | List of dtype
+
+type bop = Plus | Minus | Times | IntDiv | Div | Mod | Eq | Neq | Less | Leq | Greater | Geq | And | Or
+
+type expr = NumberLit of float | BoolLit of bool | StringLit of string | CharLit of char | Id of string | Binop of expr * bop * expr
+
+type stmt = Asn of dtype * string * expr | Say of expr
+
+type cmd = Expr of expr | Stmt of stmt
+
+type program = cmd list
+
+
+let do_stmt = function
+  | Asn(data_type, name, value) -> print_endline "Assignment"
+  | Say(expr) -> (
+      match expr with
+        | NumberLit n -> print_float n
+        | BoolLit b -> if b then print_endline "true" else print_endline "false"
+        | StringLit s -> print_endline s
+        | CharLit c -> print_char c
+        | Id _ -> print_endline "pass"
+        | Binop _ -> print_endline "pass"
+    )
+
+let do_cmd = function
+  | Expr e -> print_endline "pass"
+  | Stmt s -> do_stmt s
+
+let do_program (prog: program): unit = List.iter do_cmd prog

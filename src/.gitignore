@@ -1,1 +1,6 @@
 scanner.ml
+parser.ml
+*.mli
+*.cmi
+*.cmo
+test
