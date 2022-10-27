@@ -72,12 +72,12 @@ rule token = parse
 
 (* Literals *)
 | "none"           { NONE }
-| number as lex    { NUMBERLIT(float_of_string lex) }
-| "true"           { BOOLLIT(true) }
-| "false"          { BOOLLIT(false) }
-| string as lex    { STRINGLIT(lex) }
-| character as lex { CHARLIT(lex.[0]) }
-| id as lex        { ID(lex) }
+| number as lex    { NUMBERLIT (float_of_string lex) }
+| "true"           { BOOLLIT true }
+| "false"          { BOOLLIT false }
+| string as lex    { STRINGLIT (String.sub lex 1 (String.length lex - 2)) } (* remove quotes from string *)
+| character as lex { CHARLIT lex.[1] }
+| id as lex        { ID lex }
 
 | eof          {EOF}
 | ('"' | ''')  { raise (Failure("Mismatched quotation")) }

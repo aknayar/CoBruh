@@ -15,10 +15,12 @@ let do_stmt = function
   | Asn(data_type, name, value) -> print_endline "Assignment"
   | Say(expr) -> (
       match expr with
-        | NumberLit n -> print_endline (string_of_float n)
+        | NumberLit n -> 
+            let string_of_n = if classify_float (fst (modf n)) == FP_zero then string_of_int (Float.to_int n) else string_of_float n
+            in print_endline string_of_n
         | BoolLit b -> if b then print_endline "true" else print_endline "false"
         | StringLit s -> print_endline s
-        | CharLit c -> print_char c
+        | CharLit c -> print_endline (Char.escaped c)
         | Id _ -> print_endline "pass"
         | Binop _ -> print_endline "pass"
     )
