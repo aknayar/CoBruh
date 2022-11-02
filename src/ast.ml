@@ -31,8 +31,24 @@ type expr =
 | Binop of expr * bop * expr
 
 type stmt = 
-  Decl of dtype * string * expr
+  Block of stmt list
+| Decl of dtype * string * expr
+| If of expr * stmt * stmt
 | Say of expr
+| Loop of string * expr * expr * expr * stmt
+| Return of expr
+
+(* int x: name binding *)
+type bind = dtype * string
+
+(* func_def: ret_typ fname formals locals body *)
+type func_def = {
+  rtyp: dtype;
+  fname: string;
+  formals: bind list;
+  locals: bind list;
+  body: stmt list;
+}
 
 type cmd = Expr of expr | Stmt of stmt
 

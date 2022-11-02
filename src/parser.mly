@@ -38,6 +38,34 @@ all_cmds:
   | /* nothing */          { [] }
   | cmd all_cmds { $1::$2 }
 
+vdecl_list:
+  /*nothing*/ { [] }
+  | vdecl PERIOD vdecl_list  {  $1 :: $3 }
+
+/* int x */
+vdecl:
+  dtype ID { ($1, $2) }
+
+
+/* fdecl */
+fdecl:
+  DEFINE ID LPAREN formals_list GIVES dtype RPAREN LBRACE vdecl_list stmt_list RBRACE
+  {
+    {
+      rtyp=$6;
+      fname=$2;
+      formals=$4;
+      locals=$9;
+      body=$10
+    }
+  }
+
+/* not optional, either none or exists */
+formals_list:
+  vdecl { [$1] }
+  | vdecl COMMA formals_list { $1::$3 }
+
+
 cmd:
   | expr PERIOD { Expr $1 }
   | stmt PERIOD { Stmt $1 }
@@ -61,6 +89,21 @@ expr:
   | expr OR expr          { Binop ($1, Or, $3) }
   | ID ASSIGN expr        { Asn ($1, $3) }
   | LPAREN expr RPAREN    { $2 }
+
+
+stmt_list:
+  /* nothing */ { [] }
+  | stmt stmt_list  { $1::$2 }
+
+stmt:
+  | LBRACE stmt_list RBRACE                 { Block $2 }
+  /* if (condition) { block1} else {block2} */
+  /* if (condition) stmt else stmt */
+  | IF expr stmt ELSE stmt                  { If ($2, $3, $5) }
+  | LOOP ID IN expr TO expr stmt            { Loop ($2, $4, $6, NumberLit(1.), $7) }
+  | LOOP ID IN expr TO expr BY expr stmt    { Loop ($2, $4, $6, $8, $9) }
+  /* return */
+  | RETURN expr PERIOD                      { Return $2 }
 
 stmt:
   | dtype ID IS expr { Decl ($1, $2, $4) }
