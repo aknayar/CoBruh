@@ -3,7 +3,7 @@
 %}
 
 %token TAB
-%token LPAREN RPAREN LBRACE RBRACE PERIOD COMMA COLON PIPE
+%token LPAREN RPAREN LBRACE RBRACE PERIOD COMMA COLON PIPE ASSIGN
 %token IS PLUS MINUS TIMES INTDIV DIV MOD EQ NEQ LT LEQ GT GEQ AND OR NOT
 %token IF ELSE LOOP IN TO BY
 %token CALL DEFINE GIVES RETURN
@@ -17,8 +17,8 @@
 %token <string> STRINGLIT
 %token <string> ID
 
-%start program_rule
-%type <Ast.program> program_rule
+%start program
+%type <Ast.program> program
 
 %nonassoc IS
 %left OR
@@ -31,39 +31,40 @@
 
 %%
 
-program_rule:
-  | all_cmds_rule EOF { $1 }
+program:
+  | all_cmds EOF { $1 }
 
-all_cmds_rule:
+all_cmds:
   | /* nothing */          { [] }
-  | cmd_rule all_cmds_rule { $1::$2 }
+  | cmd all_cmds { $1::$2 }
 
-cmd_rule:
-  | expr_rule PERIOD { Expr $1 }
-  | stmt_rule PERIOD { Stmt $1 }
+cmd:
+  | expr PERIOD { Expr $1 }
+  | stmt PERIOD { Stmt $1 }
 
-expr_rule:
-  | NUMBERLIT                  { NumberLit $1 }
-  | BOOLLIT                    { BoolLit $1 }
-  | STRINGLIT                  { StringLit $1 }
-  | CHARLIT                    { CharLit $1 }
-  | ID                         { Id $1 }
-  | expr_rule PLUS expr_rule   { Binop ($1, Plus, $3) }
-  | expr_rule MINUS expr_rule  { Binop ($1, Minus, $3) }
-  | expr_rule TIMES expr_rule  { Binop ($1, Times, $3) }
-  | expr_rule INTDIV expr_rule { Binop ($1, IntDiv, $3) }
-  | expr_rule DIV expr_rule    { Binop ($1, Div, $3) }
-  | expr_rule LT expr_rule     { Binop ($1, Less, $3) }
-  | expr_rule LEQ expr_rule    { Binop ($1, Leq, $3) }
-  | expr_rule GT expr_rule     { Binop ($1, Greater, $3) }
-  | expr_rule GEQ expr_rule    { Binop ($1, Geq, $3) }
-  | expr_rule AND expr_rule    { Binop ($1, And, $3) }
-  | expr_rule OR expr_rule     { Binop ($1, Or, $3) }
-  | LPAREN expr_rule RPAREN    { $2 }
+expr:
+  | NUMBERLIT             { NumberLit $1 }
+  | BOOLLIT               { BoolLit $1 }
+  | STRINGLIT             { StringLit $1 }
+  | CHARLIT               { CharLit $1 }
+  | ID                    { Id $1 }
+  | expr PLUS expr        { Binop ($1, Plus, $3) }
+  | expr MINUS expr       { Binop ($1, Minus, $3) }
+  | expr TIMES expr       { Binop ($1, Times, $3) }
+  | expr INTDIV expr      { Binop ($1, IntDiv, $3) }
+  | expr DIV expr         { Binop ($1, Div, $3) }
+  | expr LT expr          { Binop ($1, Less, $3) }
+  | expr LEQ expr         { Binop ($1, Leq, $3) }
+  | expr GT expr          { Binop ($1, Greater, $3) }
+  | expr GEQ expr         { Binop ($1, Geq, $3) }
+  | expr AND expr         { Binop ($1, And, $3) }
+  | expr OR expr          { Binop ($1, Or, $3) }
+  | ID ASSIGN expr        { Asn ($1, $3) }
+  | LPAREN expr RPAREN    { $2 }
 
-stmt_rule:
-  | dtype ID IS expr_rule { Asn ($1, $2, $4) }
-  | SAY expr_rule   { Say $2 }
+stmt:
+  | dtype ID IS expr { Decl ($1, $2, $4) }
+  | SAY expr   { Say $2 }
   
 dtype:
   | NUMBER     { Number }

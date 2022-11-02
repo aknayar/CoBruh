@@ -1,10 +1,38 @@
-type dtype = Number | Bool | Char | String | List of dtype
+type dtype = 
+ Number 
+ | Bool 
+ | Char 
+ | String 
+ | List of dtype
 
-type bop = Plus | Minus | Times | IntDiv | Div | Mod | Eq | Neq | Less | Leq | Greater | Geq | And | Or
+type bop = 
+ Plus 
+ | Minus 
+ | Times 
+ | IntDiv 
+ | Div 
+ | Mod 
+ | Eq 
+ | Neq 
+ | Less 
+ | Leq 
+ | Greater 
+ | Geq 
+ | And 
+ | Or
 
-type expr = NumberLit of float | BoolLit of bool | StringLit of string | CharLit of char | Id of string | Binop of expr * bop * expr
+type expr = 
+  Asn of string * expr
+| NumberLit of float 
+| BoolLit of bool 
+| StringLit of string 
+| CharLit of char 
+| Id of string 
+| Binop of expr * bop * expr
 
-type stmt = Asn of dtype * string * expr | Say of expr
+type stmt = 
+  Decl of dtype * string * expr
+| Say of expr
 
 type cmd = Expr of expr | Stmt of stmt
 
@@ -12,7 +40,7 @@ type program = cmd list
 
 
 let do_stmt = function
-  | Asn(data_type, name, value) -> print_endline "Assignment"
+  | Decl(data_type, name, value) -> print_endline "Assignment"
   | Say(expr) -> (
       match expr with
         | NumberLit n -> 

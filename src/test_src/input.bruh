@@ -3,5 +3,8 @@ say 432423.
 say 432.43423.
 say true.
 say 3.5e5.
+say 5 + 3.
 say 'C'.
 say 'o'.
+
+number x is 5.
