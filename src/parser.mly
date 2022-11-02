@@ -71,24 +71,34 @@ cmd:
   | stmt PERIOD { Stmt $1 }
 
 expr:
-  | NUMBERLIT             { NumberLit $1 }
-  | BOOLLIT               { BoolLit $1 }
-  | STRINGLIT             { StringLit $1 }
-  | CHARLIT               { CharLit $1 }
-  | ID                    { Id $1 }
-  | expr PLUS expr        { Binop ($1, Plus, $3) }
-  | expr MINUS expr       { Binop ($1, Minus, $3) }
-  | expr TIMES expr       { Binop ($1, Times, $3) }
-  | expr INTDIV expr      { Binop ($1, IntDiv, $3) }
-  | expr DIV expr         { Binop ($1, Div, $3) }
-  | expr LT expr          { Binop ($1, Less, $3) }
-  | expr LEQ expr         { Binop ($1, Leq, $3) }
-  | expr GT expr          { Binop ($1, Greater, $3) }
-  | expr GEQ expr         { Binop ($1, Geq, $3) }
-  | expr AND expr         { Binop ($1, And, $3) }
-  | expr OR expr          { Binop ($1, Or, $3) }
-  | ID ASSIGN expr        { Asn ($1, $3) }
-  | LPAREN expr RPAREN    { $2 }
+  | NUMBERLIT                 { NumberLit $1 }
+  | BOOLLIT                   { BoolLit $1 }
+  | STRINGLIT                 { StringLit $1 }
+  | CHARLIT                   { CharLit $1 }
+  | ID                        { Id $1 }
+  | expr PLUS expr            { Binop ($1, Plus, $3) }
+  | expr MINUS expr           { Binop ($1, Minus, $3) }
+  | expr TIMES expr           { Binop ($1, Times, $3) }
+  | expr INTDIV expr          { Binop ($1, IntDiv, $3) }
+  | expr DIV expr             { Binop ($1, Div, $3) }
+  | expr LT expr              { Binop ($1, Less, $3) }
+  | expr LEQ expr             { Binop ($1, Leq, $3) }
+  | expr GT expr              { Binop ($1, Greater, $3) }
+  | expr GEQ expr             { Binop ($1, Geq, $3) }
+  | expr AND expr             { Binop ($1, And, $3) }
+  | expr OR expr              { Binop ($1, Or, $3) }
+  | ID ASSIGN expr            { Assign ($1, $3) }
+  | LPAREN expr RPAREN        { $2 }
+  | ID args_opt { Call ($1, $2)  }
+
+/* args_opt*/
+args_opt:
+  /*nothing*/ { [] }
+  | args { $1 }
+
+args:
+  expr  { [$1] }
+  | expr args { $1::$2 }
 
 
 stmt_list:
@@ -99,15 +109,12 @@ stmt:
   | LBRACE stmt_list RBRACE                 { Block $2 }
   /* if (condition) { block1} else {block2} */
   /* if (condition) stmt else stmt */
+  | dtype ID IS expr { Decl ($1, $2, $4) }
   | IF expr stmt ELSE stmt                  { If ($2, $3, $5) }
   | LOOP ID IN expr TO expr stmt            { Loop ($2, $4, $6, NumberLit(1.), $7) }
   | LOOP ID IN expr TO expr BY expr stmt    { Loop ($2, $4, $6, $8, $9) }
   /* return */
   | RETURN expr PERIOD                      { Return $2 }
-
-stmt:
-  | dtype ID IS expr { Decl ($1, $2, $4) }
-  | SAY expr   { Say $2 }
   
 dtype:
   | NUMBER     { Number }
