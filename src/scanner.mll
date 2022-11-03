@@ -13,8 +13,9 @@ let character = ''' ascii '''
 let string = '"' ascii* '"'
 
 rule token = parse
-  [' ' '\r' '\n' '\t'] { token lexbuf } (* whitespace *)
-| '#'                  { comment lexbuf } (* comment *)
+  [' ' '\r' '\n' ] { token lexbuf } (* whitespace *)
+| '\t'             { TAB } (* defines scope *)
+| '#'              { comment lexbuf } (* comment *)
 
 (* Symbols *)
 | '(' { LPAREN }
@@ -25,6 +26,7 @@ rule token = parse
 | ']' { RSQUARE }
 | '.' { PERIOD }
 | ',' { COMMA }
+| ':' { COLON }
 | '|' { PIPE }
 
 (* Operators *)
