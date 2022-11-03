@@ -45,7 +45,7 @@ vinit_list:
 
 /* number x is 5*/
 vinit:
-  dtype ID ASSIGN expr { ($1, $2) }
+  dtype ID ASSIGN expr { ($1, $2, $4) }
 
 /* number x*/
 vdecl:
