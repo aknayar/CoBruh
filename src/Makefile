@@ -15,4 +15,4 @@ parsertest: all parsertest.ml
 
 .PHONY: clean
 clean:
-	rm *.cmi *.cmo *.mli *.output scanner.ml parser.ml
+	rm *.cmi *.cmo *.mli *.output test_src/*.txt scanner.ml parser.ml
