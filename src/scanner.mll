@@ -31,6 +31,7 @@ rule token = parse
 
 (* Operators *)
 | "is"  { ASSIGN }
+| "set" { SET }
 | '+'   { PLUS }
 | '-'   { MINUS }
 | '*'   { TIMES }
@@ -58,6 +59,7 @@ rule token = parse
 (* Functions *)
 | "call"   { CALL }
 | "define" { DEFINE }
+| "none"   { NONE }
 | "->"     { GIVES }
 | "return" { RETURN }
 
@@ -72,7 +74,6 @@ rule token = parse
 | "list"      { LIST }
 
 (* Literals *)
-| "none"           { NONE }
 | number as lex    { NUMBERLIT (float_of_string lex) }
 | "true"           { BOOLLIT true }
 | "false"          { BOOLLIT false }

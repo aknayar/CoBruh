@@ -4,11 +4,10 @@
 
 %token TAB
 %token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE PERIOD COMMA COLON PIPE 
-%token PLUS MINUS TIMES INTDIV DIV MOD EQ NEQ LT LEQ GT GEQ AND OR NOT ASSIGN
+%token ASSIGN SET PLUS MINUS TIMES INTDIV DIV MOD EQ NEQ LT LEQ GT GEQ AND OR NOT
 %token IF ELSE LOOP IN TO BY
-%token CALL DEFINE GIVES RETURN
-%token NUMBER BOOL CHAR STRING LIST
-%token NONE
+%token CALL DEFINE NONE GIVES RETURN
+%token NUMBER BOOL CHAR STRING LIST 
 %token USE
 %token EOF
 %token <float> NUMBERLIT
@@ -129,5 +128,5 @@ func_rtype:
 
 /* allows for binding and rebinding: number x is 2 vs. x is 3 */
 opt_dtype:
-    /* nothing */ { Rebind }
-  | dtype         { BindType $1 }
+    SET   { Rebind }
+  | dtype { BindType $1 }

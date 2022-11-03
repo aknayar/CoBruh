@@ -143,6 +143,6 @@ let string_of_func_def (fn: func_def) = "define " ^ fn.fname
   ^ String.concat "" (List.map string_of_func_stmt fn.body) ^ "}\n"
 
 let string_of_program (prog: program) =
-  "\n\nParsed program: \n\n" ^
+  "Parsed program: \n\n" ^
   String.concat "" (List.map string_of_stmt (fst prog)) ^ "\n" ^
   String.concat "\n" (List.map string_of_func_def (snd prog))

@@ -5,3 +5,5 @@ parser.ml
 *.cmo
 *.output
 parsertest
+
+test_src/*.txt

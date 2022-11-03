@@ -2,7 +2,7 @@
 all: ast.ml scanner.mll parser.mly
 	ocamlc -c ast.ml
 	ocamllex scanner.mll
-	ocamlyacc parser.mly
+	ocamlyacc -v parser.mly
 	ocamlc -c parser.mli
 	ocamlc -c scanner.ml
 	ocamlc -c parser.ml
