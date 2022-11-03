@@ -36,4 +36,4 @@ define dog(none -> none) {
 foo().
 x.
 
-x is 7.
+x is 7. # I love CoBruh!

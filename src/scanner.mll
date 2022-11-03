@@ -13,9 +13,8 @@ let character = ''' ascii '''
 let string = '"' ascii* '"'
 
 rule token = parse
-  [' ' '\r' '\n'] { token lexbuf } (* whitespace *)
-| '\t'            { TAB } (* defines scope *)
-| '#'             { comment lexbuf } (* comment *)
+  [' ' '\r' '\n' '\t'] { token lexbuf } (* whitespace *)
+| '#'                  { comment lexbuf } (* comment *)
 
 (* Symbols *)
 | '(' { LPAREN }
@@ -84,5 +83,5 @@ rule token = parse
 | _            { raise (Failure("Illegal character")) }
 
 and comment = parse
-  '\n' { token lexbuf } (* comment ends at newline *)
-| _    { comment lexbuf }
+  ('\n' | eof) { token lexbuf } (* comment ends at newline *)
+| _            { comment lexbuf }
