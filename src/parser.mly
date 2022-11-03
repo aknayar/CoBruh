@@ -3,7 +3,7 @@
 %}
 
 %token TAB
-%token LPAREN RPAREN LBRACE RBRACE PERIOD COMMA COLON PIPE 
+%token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE PERIOD COMMA COLON PIPE 
 %token PLUS MINUS TIMES INTDIV DIV MOD EQ NEQ LT LEQ GT GEQ AND OR NOT ASSIGN
 %token IF ELSE LOOP IN TO BY
 %token CALL DEFINE GIVES RETURN
@@ -34,44 +34,38 @@
 program:
   decls EOF { $1 }
 
+/* tuple of (stmts, funcs) */
 decls:
-   /* nothing */ { ([], [])               }
- | vinit PERIOD decls { (($1 :: fst $3), snd $3) }
- | fdecl decls { (fst $2, ($1 :: snd $2)) }
+   /* nothing */ { ([], []) }
+ | stmt decls    { (($1 :: fst $2), snd $2) }
+ | fdecl decls   { (fst $2, ($1 :: snd $2)) }
 
-vinit_list:
-  /*nothing*/ { [] }
-  | vinit PERIOD vinit_list  {  $1 :: $3 }
-
-/* number x is 5*/
-vinit:
-  dtype ID ASSIGN expr { ($1, $2, $4) }
-
-/* number x*/
-vdecl:
+bind:
   dtype ID { ($1, $2) }
 
+/* functions with nonempty parameters */
+params_list:
+    bind                   { [$1] }
+  | bind COMMA params_list { $1::$3 }
 
-/* fdecl */
+opt_params_list:
+    NONE        { [] }
+  | params_list { $1 }
+
+/* define foo(number bar -> string) */
 fdecl:
-  DEFINE ID LPAREN formals_list GIVES dtype RPAREN COLON LBRACE vinit_list stmt_list RBRACE
+  DEFINE ID LPAREN opt_params_list GIVES func_rtype RPAREN LCURLY func_stmt_list RCURLY
   {
     {
-      rtyp=$6;
       fname=$2;
-      formals=$4;
-      locals=$10;
-      body=$11
+      params=$4;
+      rtype=$6;
+      body=$9
     }
   }
 
-/* not optional, either none or exists */
-formals_list:
-  vdecl { [$1] }
-  | vdecl COMMA formals_list { $1::$3 }
-
 expr:
-  | NUMBERLIT                 { NumberLit $1 }
+    NUMBERLIT                 { NumberLit $1 }
   | BOOLLIT                   { BoolLit $1 }
   | STRINGLIT                 { StringLit $1 }
   | CHARLIT                   { CharLit $1 }
@@ -87,39 +81,53 @@ expr:
   | expr GEQ expr             { Binop ($1, Geq, $3) }
   | expr AND expr             { Binop ($1, And, $3) }
   | expr OR expr              { Binop ($1, Or, $3) }
-  | ID ASSIGN expr            { Assign ($1, $3) }
   | LPAREN expr RPAREN        { $2 }
   | ID LPAREN args_opt RPAREN { Call ($1, $3)  }
 
-/* args_opt*/
 args_opt:
-  /*nothing*/ { [] }
-  | args { $1 }
+    /*nothing*/ { [] }
+  | args        { $1 }
 
 args:
-  expr  { [$1] }
+    expr            { [$1] }
   | expr COMMA args { $1::$3 }
 
-
 stmt_list:
-  /* nothing */ { [] }
-  | stmt stmt_list  { $1::$2 }
+    /* nothing */  { [] }
+  | stmt stmt_list { $1::$2 }
 
 stmt:
-    expr PERIOD                                   { Expr $1      }
-  | LBRACE stmt_list RBRACE                       { Block $2 }
-  /* if (condition) { block1} else {block2} */
-  /* if (condition) stmt else stmt */
-  | IF expr COLON stmt ELSE COLON stmt            { If ($2, $4, $7) }
-  | LOOP ID IN expr TO expr COLON stmt            { Loop ($2, $4, $6, NumberLit(1.), $8) }
-  | LOOP ID IN expr TO expr BY expr COLON stmt    { Loop ($2, $4, $6, $8, $10) }
-  /* return */
-  | RETURN expr PERIOD                            { Return $2 }
-  
+    expr PERIOD                                                  { Expr $1 }
+  | opt_dtype ID ASSIGN expr PERIOD                              { Assign ($1, $2, $4) }
+  | IF expr LCURLY stmt_list RCURLY ELSE LCURLY stmt_list RCURLY { If ($2, $4, $8) }
+  | LOOP ID IN expr TO expr loop_by LCURLY stmt_list RCURLY      { Loop ($2, $4, $6, $7, $9) }
+
+loop_by:
+    /* nothing */ { NumberLit 1. }
+  | BY expr       { $2 }
+
+func_stmt_list:
+    /* nothing */            { [] } /* empty function body */
+  | func_stmt func_stmt_list { $1::$2 }
+
+/* allows functions to use return keyword */
+func_stmt:
+    stmt               { Stmt $1 }
+  | RETURN expr PERIOD { Return $2 }
+
 dtype:
-  | NUMBER     { Number }
+    NUMBER     { Number }
   | BOOL       { Bool }
   | CHAR       { Char }
   | STRING     { String }
   | dtype LIST { List $1 }
-  
+
+/* allows functions to return none */
+func_rtype:
+    dtype { DType $1 }
+  | NONE  { None }
+
+/* allows for binding and rebinding: number x is 2 vs. x is 3 */
+opt_dtype:
+    /* nothing */ { Rebind }
+  | dtype         { BindType $1 }

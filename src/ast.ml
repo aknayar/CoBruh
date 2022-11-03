@@ -1,63 +1,95 @@
 type dtype = 
- Number 
- | Bool 
- | Char 
- | String 
- | List of dtype
+    Number 
+  | Bool 
+  | Char 
+  | String 
+  | List of dtype
 
-type bop = 
-   Plus 
- | Minus 
- | Times 
- | IntDiv 
- | Div 
- | Mod 
- | Eq 
- | Neq 
- | Less 
- | Leq 
- | Greater 
- | Geq 
- | And 
- | Or
+type func_rtype =
+    DType of dtype
+  | None
+
+type bind_dtype = 
+    BindType of dtype
+  | Rebind
+
+type op = 
+    Plus 
+  | Minus 
+  | Times 
+  | IntDiv 
+  | Div 
+  | Mod 
+  | Eq 
+  | Neq 
+  | Less 
+  | Leq 
+  | Greater 
+  | Geq 
+  | And 
+  | Or
 
 type expr = 
-  Assign of string * expr
-  | NumberLit of float 
+    NumberLit of float 
   | BoolLit of bool 
   | StringLit of string 
   | CharLit of char 
   | Id of string 
-  | Binop of expr * bop * expr
+  | Binop of expr * op * expr
   | Call of string * expr list
   
-  type stmt = 
-  Block of stmt list
-| Decl of dtype * string * expr
-| Expr of expr
-| If of expr * stmt * stmt
-| Loop of string * expr * expr * expr * stmt
-| Return of expr
+type bind = dtype * string                   (* number x, only appears in function parameters *)
+type bind_value = bind_dtype * string * expr (* covers number x is 2 and x is 3 *)
 
-(* int x: name binding *)
-type bind = dtype * string
-type bind_value = dtype * string * expr
+type stmt = 
+    Expr of expr
+  | Assign of bind_value
+  | If of expr * stmt list * stmt list
+  | Loop of string * expr * expr * expr * stmt list
 
-(* func_def: ret_typ fname formals locals body *)
+type func_stmt =
+    Stmt of stmt
+  | Return of expr
+
+(* 
+  define foo(number bar -> string)
+
+  func_def:
+    fname: function name
+    params: parameters
+    rtype: return type
+*)
 type func_def = {
-  rtyp: dtype;
   fname: string;
-  formals: bind list;
-  locals: bind_value list;
-  body: stmt list;
+  params: bind list;
+  rtype: func_rtype;
+  body: func_stmt list;
 }
 
-type program = bind_value list * func_def list
+type program = stmt list * func_def list
 
-(* Pretty-printing functions *)
+let rec string_of_dtype = function
+    Number -> "number"
+  | Bool -> "boolean"
+  | Char -> "character"
+  | String -> "string"
+  | List d -> string_of_dtype d ^ "list"
+
+let string_of_func_rtype = function
+    DType typ -> string_of_dtype typ
+  | None -> "none"
+
+let string_of_bind_dtype = function
+    BindType typ -> string_of_dtype typ
+  | Rebind -> ""
+
 let string_of_op = function
     Plus -> "+"
   | Minus -> "-"
+  | Times -> "*"
+  | IntDiv -> "//"
+  | Div -> "/"
+  | Mod -> "%"
   | Eq -> "=="
   | Neq -> "=/="
   | Less -> "<"
@@ -68,46 +100,49 @@ let string_of_op = function
   | Or -> "or"
 
 let rec string_of_expr = function
-    NumberLit(n) -> if classify_float (fst (modf n)) == FP_zero then string_of_int (Float.to_int n) else string_of_float n
-  | BoolLit(true) -> "true"
-  | BoolLit(false) -> "false"
-  | CharLit(c) -> Char.escaped c
-  | Id(s) -> s
-  | Binop(e1, o, e2) ->
-    string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
-  | Assign(v, e) -> v ^ " = " ^ string_of_expr e
-  | Call(f, el) ->
+    NumberLit n -> if classify_float (fst (modf n)) == FP_zero then string_of_int (Float.to_int n) else string_of_float n
+  | BoolLit b -> if b then "true" else "false"
+  | CharLit c -> Char.escaped c
+  | StringLit s -> s
+  | Id id -> id
+  | Binop (e1, op, e2) ->
+      string_of_expr e1 ^ " " ^ string_of_op op ^ " " ^ string_of_expr e2
+  (* | Assign (v, e) -> v ^ " = " ^ string_of_expr e *)
+  | Call (f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
 
+let string_of_bind_value (bv: bind_value) = let (t, id, e) = bv in string_of_bind_dtype t ^ 
+(
+  match t with
+      BindType _ -> " "
+    | Rebind -> ""
+) 
+^ id ^ " is " ^ string_of_expr e ^ ".\n"
+
 let rec string_of_stmt = function
-    Block(stmts) ->
-    "{\n" ^ String.concat "" (List.map string_of_stmt stmts) ^ "}\n"
-  | Expr(expr) -> string_of_expr expr ^ ";\n"
-  | Return(expr) -> "return " ^ string_of_expr expr ^ ";\n"
-  | If(e, s1, s2) ->  "if (" ^ string_of_expr e ^ ")\n" ^
-                      string_of_stmt s1 ^ "else\n" ^ string_of_stmt s2
-  | Loop(id, s, e, b, st) -> "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ string_of_stmt st
+    Assign bv -> string_of_bind_value bv
+  | Expr ex -> string_of_expr ex ^ ".\n"
+  | If (e, s1, s2) ->  "if " ^ string_of_expr e ^ "\n" ^ String.concat "" (List.map string_of_stmt s1) ^ "else\n" ^ String.concat "" (List.map string_of_stmt s2)
+  | Loop (id, s, e, b, st) -> "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ "\n" ^ String.concat "" (List.map string_of_stmt st)
 
-let rec string_of_dtype = function
-    Number -> "number"
-  | Bool -> "boolean"
-  | Char -> "character"
-  | String -> "string"
-  | List(d) -> string_of_dtype d ^ "list"
+let string_of_func_stmt = function
+    Stmt st -> string_of_stmt st
+  | Return ex -> "return " ^ string_of_expr ex ^ ".\n"
 
-let string_of_vinit (t, id, e) = string_of_dtype t ^ " " ^ id ^ " " ^ string_of_expr e ^ ";\n"
 
-let string_of_vdecl (t, id) = string_of_dtype t ^ " " ^ id ^ ";\n"
+let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ id
+let string_of_func_params (binds: bind list) = 
+  match binds with
+      [] -> "none"
+    | _ -> String.concat ", " (List.map string_of_bind binds)
+  
 
-let string_of_fdecl fdecl =
-  string_of_dtype fdecl.rtyp ^ " " ^
-  fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.formals) ^
-  ")\n{\n" ^
-  String.concat "" (List.map string_of_vinit fdecl.locals) ^
-  String.concat "" (List.map string_of_stmt fdecl.body) ^
-  "}\n"
+let string_of_func_def (fn: func_def) = "define " ^ fn.fname 
+  ^ " (" ^ string_of_func_params fn.params
+  ^ " -> " ^ string_of_func_rtype fn.rtype ^ ")\n{\n"
+  ^ String.concat "" (List.map string_of_func_stmt fn.body) ^ "}\n"
 
-let string_of_program (vars, funcs) =
+let string_of_program (prog: program) =
   "\n\nParsed program: \n\n" ^
-  String.concat "" (List.map string_of_vdecl vars) ^ "\n" ^
-  String.concat "\n" (List.map string_of_fdecl funcs)
+  String.concat "" (List.map string_of_stmt (fst prog)) ^ "\n" ^
+  String.concat "\n" (List.map string_of_func_def (snd prog))

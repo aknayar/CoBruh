@@ -3,4 +3,4 @@ parser.ml
 *.mli
 *.cmi
 *.cmo
-test
+*.output

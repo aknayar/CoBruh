@@ -20,11 +20,13 @@ rule token = parse
 (* Symbols *)
 | '(' { LPAREN }
 | ')' { RPAREN }
-| '[' { LBRACE }
-| ']' { RBRACE }
+| '{' { LCURLY }
+| '}' { RCURLY }
+| '[' { LSQUARE }
+| ']' { RSQUARE }
 | '.' { PERIOD }
 | ',' { COMMA }
-| ':' { COLON }
+(* | ':' { COLON } *)
 | '|' { PIPE }
 
 (* Operators *)
@@ -74,8 +76,8 @@ rule token = parse
 | number as lex    { NUMBERLIT (float_of_string lex) }
 | "true"           { BOOLLIT true }
 | "false"          { BOOLLIT false }
-| string as lex    { STRINGLIT (String.sub lex 1 (String.length lex - 2)) } (* remove quotes from string *)
 | character as lex { CHARLIT lex.[1] }
+| string as lex    { STRINGLIT (String.sub lex 1 (String.length lex - 2)) } (* remove quotes from string *)
 | id as lex        { ID lex }
 
 | eof          {EOF}
