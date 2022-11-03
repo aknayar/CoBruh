@@ -61,7 +61,6 @@ rule token = parse
 
 (* Builtin Functions *)
 | "use" { USE }
-| "say" { SAY }
 
 (* Data Types *)
 | "number"    { NUMBER }

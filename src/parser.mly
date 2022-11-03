@@ -9,7 +9,7 @@
 %token CALL DEFINE GIVES RETURN
 %token NUMBER BOOL CHAR STRING LIST
 %token NONE
-%token USE SAY
+%token USE
 %token EOF
 %token <float> NUMBERLIT
 %token <bool> BOOLLIT
