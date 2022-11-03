@@ -1,9 +1,1 @@
-number a is 5.
-number b is 3.5.
-
-say a + b. # should say 8.5
-
-number foo is 3.
-number baz is 6.
-number bar is bas.
-say foo * bar + baz. # should print 24, might need parenthesis
+number x is 5.
