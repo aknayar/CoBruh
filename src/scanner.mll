@@ -28,7 +28,7 @@ rule token = parse
 | '|' { PIPE }
 
 (* Operators *)
-| "is"  { IS }
+| "is"  { ASSIGN }
 | '+'   { PLUS }
 | '-'   { MINUS }
 | '*'   { TIMES }
