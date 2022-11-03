@@ -103,7 +103,6 @@ stmt:
   | ID ASSIGN expr PERIOD                                                          { Reassign ($1, $3) }
   | IF expr COLON LCURLY stmt_list RCURLY ELSE COLON LCURLY stmt_list RCURLY       { If ($2, $5, $10) }
   | LOOP ID IN expr TO expr loop_by COLON LCURLY stmt_list RCURLY                  { Loop ($2, $4, $6, $7, $10) }
-  | LOOP ID IN expr TO expr loop_by COLON LCURLY stmt_list RCURLY                  { Loop ($2, $4, $6, $7, $10) }
   | RETURN expr PERIOD                                                             { Return $2 }
 
 loop_by:

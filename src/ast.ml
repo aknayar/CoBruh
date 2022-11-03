@@ -103,8 +103,8 @@ let rec string_of_stmt = function
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ ".\n"
   | Reassign (id, e) -> id ^ " is " ^ string_of_expr e ^ ".\n"
   | Expr ex -> string_of_expr ex ^ ".\n"
-  | If (e, s1, s2) ->  "if " ^ string_of_expr e ^ "\n{\n" ^ String.concat "" (List.map string_of_stmt s1) ^ "}\nelse\n{\n" ^ String.concat "" (List.map string_of_stmt s2) ^ "}\n"
-  | Loop (id, s, e, b, st) -> "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ "\n{\n" ^ String.concat "" (List.map string_of_stmt st) ^ "}\n"
+  | If (e, s1, s2) ->  "if " ^ string_of_expr e ^ ": {\n" ^ String.concat "" (List.map string_of_stmt s1) ^ "}\nelse: {\n" ^ String.concat "" (List.map string_of_stmt s2) ^ "}\n"
+  | Loop (id, s, e, b, st) -> "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ ": {\n" ^ String.concat "" (List.map string_of_stmt st) ^ "}\n"
   | Return ex -> "return " ^ string_of_expr ex ^ ".\n"
 
 let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id
@@ -116,7 +116,7 @@ let string_of_func_params (binds: bind list) =
   
 let string_of_func_def (fn: func_def) = "define " ^ fn.fname 
   ^ " (" ^ string_of_func_params fn.params
-  ^ " -> " ^ string_of_func_rtype fn.rtype ^ ")\n{\n"
+  ^ " -> " ^ string_of_func_rtype fn.rtype ^ "): {\n"
   ^ String.concat "" (List.map string_of_stmt fn.body) ^ "}\n"
 
 let string_of_program (prog: program) =
