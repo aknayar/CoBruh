@@ -4,7 +4,7 @@
 
 %token TAB
 %token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE PERIOD COMMA COLON PIPE 
-%token ASSIGN SET PLUS MINUS TIMES INTDIV DIV MOD EQ NEQ LT LEQ GT GEQ AND OR NOT
+%token ASSIGN PLUS MINUS TIMES INTDIV DIV MOD EQ NEQ LT LEQ GT GEQ AND OR NOT
 %token IF ELSE LOOP IN TO BY
 %token CALL DEFINE NONE GIVES RETURN
 %token NUMBER BOOL CHAR STRING LIST 
@@ -97,7 +97,8 @@ stmt_list:
 
 stmt:
     expr PERIOD                                                  { Expr $1 }
-  | opt_dtype ID ASSIGN expr PERIOD                              { Assign ($1, $2, $4) }
+  | dtype ID ASSIGN expr PERIOD                                  { Assign ($1, $2, $4) }
+  | ID ASSIGN expr PERIOD                                        { Reassign ($1, $3) }
   | IF expr LCURLY stmt_list RCURLY ELSE LCURLY stmt_list RCURLY { If ($2, $4, $8) }
   | LOOP ID IN expr TO expr loop_by LCURLY stmt_list RCURLY      { Loop ($2, $4, $6, $7, $9) }
 
@@ -125,8 +126,3 @@ dtype:
 func_rtype:
     dtype { DType $1 }
   | NONE  { None }
-
-/* allows for binding and rebinding: number x is 2 vs. x is 3 */
-opt_dtype:
-    SET   { Rebind }
-  | dtype { BindType $1 }

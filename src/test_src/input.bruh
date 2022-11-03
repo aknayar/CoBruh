@@ -7,3 +7,5 @@ define foo(none -> none) {
 
 foo().
 x.
+
+x is 7.

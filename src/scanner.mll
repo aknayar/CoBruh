@@ -31,7 +31,6 @@ rule token = parse
 
 (* Operators *)
 | "is"  { ASSIGN }
-| "set" { SET }
 | '+'   { PLUS }
 | '-'   { MINUS }
 | '*'   { TIMES }

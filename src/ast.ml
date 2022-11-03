@@ -9,10 +9,6 @@ type func_rtype =
     DType of dtype
   | None
 
-type bind_dtype = 
-    BindType of dtype
-  | Rebind
-
 type op = 
     Plus 
   | Minus 
@@ -38,14 +34,14 @@ type expr =
   | Binop of expr * op * expr
   | Call of string * expr list
   
-type bind = dtype * string                   (* number x, only appears in function parameters *)
-type bind_value = bind_dtype * string * expr (* covers number x is 2 and x is 3 *)
-
 type stmt = 
     Expr of expr
-  | Assign of bind_value
+  | Assign of dtype * string * expr
+  | Reassign of string * expr
   | If of expr * stmt list * stmt list
   | Loop of string * expr * expr * expr * stmt list
+
+type bind = dtype * string (* number x, only appears in function parameters *)
 
 type func_stmt =
     Stmt of stmt
@@ -79,11 +75,7 @@ let string_of_func_rtype = function
     DType typ -> string_of_dtype typ
   | None -> "none"
 
-let string_of_bind_dtype = function
-    BindType typ -> string_of_dtype typ
-  | Rebind -> ""
-
-let string_of_op = function
+  let string_of_op = function
     Plus -> "+"
   | Minus -> "-"
   | Times -> "*"
@@ -107,20 +99,12 @@ let rec string_of_expr = function
   | Id id -> id
   | Binop (e1, op, e2) ->
       string_of_expr e1 ^ " " ^ string_of_op op ^ " " ^ string_of_expr e2
-  (* | Assign (v, e) -> v ^ " = " ^ string_of_expr e *)
   | Call (f, el) ->
       f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
 
-let string_of_bind_value (bv: bind_value) = let (t, id, e) = bv in string_of_bind_dtype t ^ 
-(
-  match t with
-      BindType _ -> " "
-    | Rebind -> ""
-) 
-^ id ^ " is " ^ string_of_expr e ^ ".\n"
-
 let rec string_of_stmt = function
-    Assign bv -> string_of_bind_value bv
+    Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ ".\n"
+  | Reassign (id, e) -> id ^ " is " ^ string_of_expr e ^ ".\n"
   | Expr ex -> string_of_expr ex ^ ".\n"
   | If (e, s1, s2) ->  "if " ^ string_of_expr e ^ "\n" ^ String.concat "" (List.map string_of_stmt s1) ^ "else\n" ^ String.concat "" (List.map string_of_stmt s2)
   | Loop (id, s, e, b, st) -> "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ "\n" ^ String.concat "" (List.map string_of_stmt st)
@@ -129,8 +113,8 @@ let string_of_func_stmt = function
     Stmt st -> string_of_stmt st
   | Return ex -> "return " ^ string_of_expr ex ^ ".\n"
 
-
 let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ id
+
 let string_of_func_params (binds: bind list) = 
   match binds with
       [] -> "none"
