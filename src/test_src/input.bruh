@@ -1,10 +1,39 @@
-say "Hello world".
-say 432423.
-say 432.43423.
-say true.
-say 3.5e5.
-say 5 + 3.
-say 'C'.
-say 'o'.
+number x is 1 + 2.
 
-number x is 5.
+define foo(none -> number) {
+  number y is 10.
+  return y.
+}
+
+define bar(number a, number b -> boolean) {
+  return a == b.
+}
+
+define egg(boolean b, number n1, number n2 -> string) {
+  if b {
+    return "b is true".
+  }
+  else {
+    if n1 > n2 {
+      return "n1 is greater".
+    }
+    else {
+      return "n1 is not greater".
+    }
+  }
+}
+
+define dog(none -> none) {
+  number a is 0.
+  loop i in 0 to 10 {
+    a is a + 1.
+  }
+  loop i in 0 to 10 by 2 {
+    a is a + 5.
+  }
+}
+
+foo().
+x.
+
+x is 7. # I love CoBruh!

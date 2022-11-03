@@ -3,4 +3,7 @@ parser.ml
 *.mli
 *.cmi
 *.cmo
-test
+*.output
+parsertest
+
+test_src/*.txt

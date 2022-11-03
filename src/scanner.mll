@@ -13,18 +13,18 @@ let character = ''' ascii '''
 let string = '"' ascii* '"'
 
 rule token = parse
-  [' ' '\r' '\n'] { token lexbuf } (* whitespace *)
-| '\t'            { TAB } (* defines scope *)
-| '#'             { comment lexbuf } (* comment *)
+  [' ' '\r' '\n' '\t'] { token lexbuf } (* whitespace *)
+| '#'                  { comment lexbuf } (* comment *)
 
 (* Symbols *)
 | '(' { LPAREN }
 | ')' { RPAREN }
-| '[' { LBRACE }
-| ']' { RBRACE }
+| '{' { LCURLY }
+| '}' { RCURLY }
+| '[' { LSQUARE }
+| ']' { RSQUARE }
 | '.' { PERIOD }
 | ',' { COMMA }
-| ':' { COLON }
 | '|' { PIPE }
 
 (* Operators *)
@@ -56,6 +56,7 @@ rule token = parse
 (* Functions *)
 | "call"   { CALL }
 | "define" { DEFINE }
+| "none"   { NONE }
 | "->"     { GIVES }
 | "return" { RETURN }
 
@@ -70,12 +71,11 @@ rule token = parse
 | "list"      { LIST }
 
 (* Literals *)
-| "none"           { NONE }
 | number as lex    { NUMBERLIT (float_of_string lex) }
 | "true"           { BOOLLIT true }
 | "false"          { BOOLLIT false }
-| string as lex    { STRINGLIT (String.sub lex 1 (String.length lex - 2)) } (* remove quotes from string *)
 | character as lex { CHARLIT lex.[1] }
+| string as lex    { STRINGLIT (String.sub lex 1 (String.length lex - 2)) } (* remove quotes from string *)
 | id as lex        { ID lex }
 
 | eof          {EOF}
@@ -83,5 +83,5 @@ rule token = parse
 | _            { raise (Failure("Illegal character")) }
 
 and comment = parse
-  '\n' { token lexbuf } (* comment ends at newline *)
-| _    { comment lexbuf }
+  ('\n' | eof) { token lexbuf } (* comment ends at newline *)
+| _            { comment lexbuf }
