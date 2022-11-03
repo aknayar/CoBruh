@@ -51,9 +51,7 @@ type func_def = {
   body: stmt list;
 }
 
-type cmd = Expr of expr | Stmt of stmt
-
-type program = cmd list
+type program = bind list * func_def list
 
 (* Pretty-printing functions *)
 let string_of_op = function

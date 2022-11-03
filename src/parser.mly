@@ -32,11 +32,12 @@
 %%
 
 program:
-  | all_cmds EOF { $1 }
+  decls EOF { $1 }
 
-all_cmds:
-  | /* nothing */          { [] }
-  | cmd all_cmds { $1::$2 }
+decls:
+   /* nothing */ { ([], [])               }
+ | vdecl PERIOD decls { (($1 :: fst $3), snd $3) }
+ | fdecl decls { (fst $2, ($1 :: snd $2)) }
 
 vdecl_list:
   /*nothing*/ { [] }
@@ -49,14 +50,14 @@ vdecl:
 
 /* fdecl */
 fdecl:
-  DEFINE ID LPAREN formals_list GIVES dtype RPAREN LBRACE vdecl_list stmt_list RBRACE
+  DEFINE ID LPAREN formals_list GIVES dtype RPAREN COLON LBRACE vdecl_list stmt_list RBRACE
   {
     {
       rtyp=$6;
       fname=$2;
       formals=$4;
-      locals=$9;
-      body=$10
+      locals=$10;
+      body=$11
     }
   }
 
@@ -64,11 +65,6 @@ fdecl:
 formals_list:
   vdecl { [$1] }
   | vdecl COMMA formals_list { $1::$3 }
-
-
-cmd:
-  | expr PERIOD { Expr $1 }
-  | stmt PERIOD { Stmt $1 }
 
 expr:
   | NUMBERLIT                 { NumberLit $1 }
@@ -89,7 +85,22 @@ expr:
   | expr OR expr              { Binop ($1, Or, $3) }
   | ID ASSIGN expr            { Assign ($1, $3) }
   | LPAREN expr RPAREN        { $2 }
-  | ID args_opt { Call ($1, $2)  }
+  | ID LPAREN args_opt RPAREN               { Call ($1, $3)  }
+
+// mexpr:
+//   mexpr PLUS term 
+// | mexpr MINUS term
+// | term
+
+// term:
+//   term TIMES atom
+// | term DIV atom
+// | term INTDIV atom
+// | atom
+
+// atom: 
+//   LITERAL
+// | ID
 
 /* args_opt*/
 args_opt:
@@ -106,15 +117,15 @@ stmt_list:
   | stmt stmt_list  { $1::$2 }
 
 stmt:
-  | LBRACE stmt_list RBRACE                 { Block $2 }
+  | LBRACE stmt_list RBRACE                       { Block $2 }
   /* if (condition) { block1} else {block2} */
   /* if (condition) stmt else stmt */
-  | dtype ID IS expr { Decl ($1, $2, $4) }
-  | IF expr stmt ELSE stmt                  { If ($2, $3, $5) }
-  | LOOP ID IN expr TO expr stmt            { Loop ($2, $4, $6, NumberLit(1.), $7) }
-  | LOOP ID IN expr TO expr BY expr stmt    { Loop ($2, $4, $6, $8, $9) }
+  | dtype ID IS expr                              { Decl ($1, $2, $4) }
+  | IF expr COLON stmt ELSE  COLON stmt           { If ($2, $4, $7) }
+  | LOOP ID IN expr TO expr COLON stmt            { Loop ($2, $4, $6, NumberLit(1.), $8) }
+  | LOOP ID IN expr TO expr BY expr COLON stmt    { Loop ($2, $4, $6, $8, $10) }
   /* return */
-  | RETURN expr PERIOD                      { Return $2 }
+  | RETURN expr PERIOD                            { Return $2 }
   
 dtype:
   | NUMBER     { Number }
