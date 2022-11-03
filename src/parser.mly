@@ -4,7 +4,7 @@
 
 %token TAB
 %token LPAREN RPAREN LBRACE RBRACE PERIOD COMMA COLON PIPE 
-%token PLUS MINUS TIMES INTDIV DIV MOD EQ NEQ LT LEQ GT GEQ AND OR NOT
+%token PLUS MINUS TIMES INTDIV DIV MOD EQ NEQ LT LEQ GT GEQ AND OR NOT ASSIGN
 %token IF ELSE LOOP IN TO BY
 %token CALL DEFINE GIVES RETURN
 %token NUMBER BOOL CHAR STRING LIST
@@ -41,7 +41,7 @@ decls:
 
 vinit_list:
   /*nothing*/ { [] }
-  | vdecl PERIOD vinit_list  {  $1 :: $3 }
+  | vinit PERIOD vinit_list  {  $1 :: $3 }
 
 /* number x is 5*/
 vinit:

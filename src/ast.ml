@@ -41,17 +41,18 @@ type expr =
 
 (* int x: name binding *)
 type bind = dtype * string
+type bind_value = dtype * string * expr
 
 (* func_def: ret_typ fname formals locals body *)
 type func_def = {
   rtyp: dtype;
   fname: string;
   formals: bind list;
-  locals: bind list;
+  locals: bind_value list;
   body: stmt list;
 }
 
-type program = bind list * func_def list
+type program = bind_value list * func_def list
 
 (* Pretty-printing functions *)
 let string_of_op = function
@@ -94,13 +95,15 @@ let rec string_of_dtype = function
   | String -> "string"
   | List(d) -> string_of_dtype d ^ "list"
 
+let string_of_vinit (t, id, e) = string_of_dtype t ^ " " ^ id ^ " " ^ string_of_expr e ^ ";\n"
+
 let string_of_vdecl (t, id) = string_of_dtype t ^ " " ^ id ^ ";\n"
 
 let string_of_fdecl fdecl =
   string_of_dtype fdecl.rtyp ^ " " ^
   fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.formals) ^
   ")\n{\n" ^
-  String.concat "" (List.map string_of_vdecl fdecl.locals) ^
+  String.concat "" (List.map string_of_vinit fdecl.locals) ^
   String.concat "" (List.map string_of_stmt fdecl.body) ^
   "}\n"
 
