@@ -26,7 +26,6 @@ rule token = parse
 | ']' { RSQUARE }
 | '.' { PERIOD }
 | ',' { COMMA }
-(* | ':' { COLON } *)
 | '|' { PIPE }
 
 (* Operators *)

@@ -3,7 +3,7 @@
 %}
 
 %token TAB
-%token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE PERIOD COMMA COLON PIPE 
+%token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE PERIOD COMMA PIPE 
 %token ASSIGN PLUS MINUS TIMES INTDIV DIV MOD EQ NEQ LT LEQ GT GEQ AND OR NOT
 %token IF ELSE LOOP IN TO BY
 %token CALL DEFINE NONE GIVES RETURN
@@ -53,7 +53,7 @@ opt_params_list:
 
 /* define foo(number bar -> string) */
 fdecl:
-  DEFINE ID LPAREN opt_params_list GIVES func_rtype RPAREN LCURLY func_stmt_list RCURLY
+  DEFINE ID LPAREN opt_params_list GIVES func_rtype RPAREN LCURLY stmt_list RCURLY
   {
     {
       fname=$2;
@@ -74,6 +74,8 @@ expr:
   | expr TIMES expr           { Binop ($1, Times, $3) }
   | expr INTDIV expr          { Binop ($1, IntDiv, $3) }
   | expr DIV expr             { Binop ($1, Div, $3) }
+  | expr EQ expr              { Binop ($1, Eq, $3) }
+  | expr NEQ expr             { Binop ($1, Neq, $3) }
   | expr LT expr              { Binop ($1, Less, $3) }
   | expr LEQ expr             { Binop ($1, Leq, $3) }
   | expr GT expr              { Binop ($1, Greater, $3) }
@@ -101,19 +103,11 @@ stmt:
   | ID ASSIGN expr PERIOD                                        { Reassign ($1, $3) }
   | IF expr LCURLY stmt_list RCURLY ELSE LCURLY stmt_list RCURLY { If ($2, $4, $8) }
   | LOOP ID IN expr TO expr loop_by LCURLY stmt_list RCURLY      { Loop ($2, $4, $6, $7, $9) }
+  | RETURN expr PERIOD                                           { Return $2 }
 
 loop_by:
     /* nothing */ { NumberLit 1. }
   | BY expr       { $2 }
-
-func_stmt_list:
-    /* nothing */            { [] } /* empty function body */
-  | func_stmt func_stmt_list { $1::$2 }
-
-/* allows functions to use return keyword */
-func_stmt:
-    stmt               { Stmt $1 }
-  | RETURN expr PERIOD { Return $2 }
 
 dtype:
     NUMBER     { Number }
