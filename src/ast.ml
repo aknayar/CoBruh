@@ -23,17 +23,17 @@ type bop =
 
 type expr = 
   Assign of string * expr
-| Decl of dtype * string * expr
-| NumberLit of float 
-| BoolLit of bool 
-| StringLit of string 
-| CharLit of char 
-| Id of string 
-| Binop of expr * bop * expr
-| Call of string * expr list
-
-type stmt = 
+  | NumberLit of float 
+  | BoolLit of bool 
+  | StringLit of string 
+  | CharLit of char 
+  | Id of string 
+  | Binop of expr * bop * expr
+  | Call of string * expr list
+  
+  type stmt = 
   Block of stmt list
+| Decl of dtype * string * expr
 | Expr of expr
 | If of expr * stmt * stmt
 | Loop of string * expr * expr * expr * stmt

@@ -36,21 +36,25 @@ program:
 
 decls:
    /* nothing */ { ([], [])               }
- | vdecl PERIOD decls { (($1 :: fst $3), snd $3) }
+ | vinit PERIOD decls { (($1 :: fst $3), snd $3) }
  | fdecl decls { (fst $2, ($1 :: snd $2)) }
 
-vdecl_list:
+vinit_list:
   /*nothing*/ { [] }
-  | vdecl PERIOD vdecl_list  {  $1 :: $3 }
+  | vdecl PERIOD vinit_list  {  $1 :: $3 }
 
-/* int x */
+/* number x is 5*/
+vinit:
+  dtype ID ASSIGN expr { ($1, $2) }
+
+/* number x*/
 vdecl:
   dtype ID { ($1, $2) }
 
 
 /* fdecl */
 fdecl:
-  DEFINE ID LPAREN formals_list GIVES dtype RPAREN COLON LBRACE vdecl_list stmt_list RBRACE
+  DEFINE ID LPAREN formals_list GIVES dtype RPAREN COLON LBRACE vinit_list stmt_list RBRACE
   {
     {
       rtyp=$6;
@@ -84,7 +88,6 @@ expr:
   | expr AND expr             { Binop ($1, And, $3) }
   | expr OR expr              { Binop ($1, Or, $3) }
   | ID ASSIGN expr            { Assign ($1, $3) }
-  // | dtype ID IS expr          { Decl ($1, $2, $4) }
   | LPAREN expr RPAREN        { $2 }
   | ID LPAREN args_opt RPAREN { Call ($1, $3)  }
 
