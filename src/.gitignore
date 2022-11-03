@@ -4,3 +4,4 @@ parser.ml
 *.cmi
 *.cmo
 *.output
+parsertest
