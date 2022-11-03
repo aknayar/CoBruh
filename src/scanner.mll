@@ -28,7 +28,7 @@ rule token = parse
 | '|' { PIPE }
 
 (* Operators *)
-| "is"  { IS }
+| "is"  { ASSIGN }
 | '+'   { PLUS }
 | '-'   { MINUS }
 | '*'   { TIMES }
@@ -61,7 +61,6 @@ rule token = parse
 
 (* Builtin Functions *)
 | "use" { USE }
-| "say" { SAY }
 
 (* Data Types *)
 | "number"    { NUMBER }
