@@ -3,7 +3,7 @@
 %}
 
 %token TAB
-%token LPAREN RPAREN LBRACE RBRACE PERIOD COMMA COLON PIPE ASSIGN
+%token LPAREN RPAREN LBRACE RBRACE PERIOD COMMA COLON PIPE 
 %token PLUS MINUS TIMES INTDIV DIV MOD EQ NEQ LT LEQ GT GEQ AND OR NOT
 %token IF ELSE LOOP IN TO BY
 %token CALL DEFINE GIVES RETURN
@@ -20,12 +20,12 @@
 %start program
 %type <Ast.program> program
 
-%nonassoc IS
+%right ASSIGN
 %left OR
 %left AND
-%nonassoc NOT
+%right NOT
 %left EQ NEQ
-%nonassoc LT LEQ GT GEQ
+%left LT LEQ GT GEQ
 %left PLUS MINUS
 %left TIMES INTDIV DIV MOD
 
@@ -84,23 +84,9 @@ expr:
   | expr AND expr             { Binop ($1, And, $3) }
   | expr OR expr              { Binop ($1, Or, $3) }
   | ID ASSIGN expr            { Assign ($1, $3) }
+  // | dtype ID IS expr          { Decl ($1, $2, $4) }
   | LPAREN expr RPAREN        { $2 }
-  | ID LPAREN args_opt RPAREN               { Call ($1, $3)  }
-
-// mexpr:
-//   mexpr PLUS term 
-// | mexpr MINUS term
-// | term
-
-// term:
-//   term TIMES atom
-// | term DIV atom
-// | term INTDIV atom
-// | atom
-
-// atom: 
-//   LITERAL
-// | ID
+  | ID LPAREN args_opt RPAREN { Call ($1, $3)  }
 
 /* args_opt*/
 args_opt:
@@ -109,7 +95,7 @@ args_opt:
 
 args:
   expr  { [$1] }
-  | expr args { $1::$2 }
+  | expr COMMA args { $1::$3 }
 
 
 stmt_list:
@@ -117,11 +103,11 @@ stmt_list:
   | stmt stmt_list  { $1::$2 }
 
 stmt:
+    expr PERIOD                                   { Expr $1      }
   | LBRACE stmt_list RBRACE                       { Block $2 }
   /* if (condition) { block1} else {block2} */
   /* if (condition) stmt else stmt */
-  | dtype ID IS expr                              { Decl ($1, $2, $4) }
-  | IF expr COLON stmt ELSE  COLON stmt           { If ($2, $4, $7) }
+  | IF expr COLON stmt ELSE COLON stmt            { If ($2, $4, $7) }
   | LOOP ID IN expr TO expr COLON stmt            { Loop ($2, $4, $6, NumberLit(1.), $8) }
   | LOOP ID IN expr TO expr BY expr COLON stmt    { Loop ($2, $4, $6, $8, $10) }
   /* return */

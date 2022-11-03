@@ -23,6 +23,7 @@ type bop =
 
 type expr = 
   Assign of string * expr
+| Decl of dtype * string * expr
 | NumberLit of float 
 | BoolLit of bool 
 | StringLit of string 
@@ -34,7 +35,6 @@ type expr =
 type stmt = 
   Block of stmt list
 | Expr of expr
-| Decl of dtype * string * expr
 | If of expr * stmt * stmt
 | Loop of string * expr * expr * expr * stmt
 | Return of expr
