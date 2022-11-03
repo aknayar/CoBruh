@@ -113,6 +113,7 @@ stmt:
   | IF expr COLON stmt ELSE COLON stmt            { If ($2, $4, $7) }
   | LOOP ID IN expr TO expr COLON stmt            { Loop ($2, $4, $6, NumberLit(1.), $8) }
   | LOOP ID IN expr TO expr BY expr COLON stmt    { Loop ($2, $4, $6, $8, $10) }
+  | WHILE expr COLON stmt                         { While ($2, $4) }
   /* return */
   | RETURN expr PERIOD                            { Return $2 }
   

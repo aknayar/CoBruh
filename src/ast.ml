@@ -31,12 +31,13 @@ type expr =
   | Binop of expr * bop * expr
   | Call of string * expr list
   
-  type stmt = 
+type stmt = 
   Block of stmt list
 | Decl of dtype * string * expr
 | Expr of expr
 | If of expr * stmt * stmt
 | Loop of string * expr * expr * expr * stmt
+| While of expr * stmt
 | Return of expr
 
 (* int x: name binding *)

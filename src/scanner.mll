@@ -46,12 +46,13 @@ rule token = parse
 | "not" { NOT }
 
 (* Branching *)
-| "if"   { IF }
-| "else" { ELSE }
-| "loop" { LOOP }
-| "in"   { IN }
-| "to"   { TO }
-| "by"   { BY }
+| "if"    { IF }
+| "else"  { ELSE }
+| "loop"  { LOOP }
+| "while" { WHILE }
+| "in"    { IN }
+| "to"    { TO }
+| "by"    { BY }
 
 (* Functions *)
 | "call"   { CALL }
