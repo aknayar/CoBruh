@@ -107,14 +107,13 @@ let rec string_of_stmt = function
   | Loop (id, s, e, b, st) -> "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ "\n{\n" ^ String.concat "" (List.map string_of_stmt st) ^ "}\n"
   | Return ex -> "return " ^ string_of_expr ex ^ ".\n"
 
-  let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id
+let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id
 
 let string_of_func_params (binds: bind list) = 
   match binds with
       [] -> "none"
     | _ -> String.concat ", " (List.map string_of_bind binds)
   
-
 let string_of_func_def (fn: func_def) = "define " ^ fn.fname 
   ^ " (" ^ string_of_func_params fn.params
   ^ " -> " ^ string_of_func_rtype fn.rtype ^ ")\n{\n"
