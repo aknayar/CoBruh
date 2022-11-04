@@ -18,25 +18,26 @@
 %start program
 %type <Ast.program> program
 
-%right ASSIGN
+%nonassoc ASSIGN
 %left OR
 %left AND
 %right NOT
-%left EQ NEQ
-%left LT LEQ GT GEQ
+%nonassoc EQ NEQ
+%nonassoc LT LEQ GT GEQ
 %left PLUS MINUS
 %left TIMES INTDIV DIV MOD
+%nonassoc UMINUS
 
 %%
 
 program:
   decls EOF { $1 }
 
-/* tuple of (stmts, funcs) */
+/* list of stmts and funcs */
 decls:
-   /* nothing */ { ([], []) }
- | stmt decls    { (($1 :: fst $2), snd $2) }
- | fdecl decls   { (fst $2, ($1 :: snd $2)) }
+   /* nothing */ { [] }
+ | stmt decls    { (Stmt $1)::$2 }
+ | fdecl decls   { (Func $1)::$2 }
 
 bind:
   dtype ID { ($1, $2) }
@@ -73,6 +74,7 @@ expr:
   | expr TIMES expr           { Binop ($1, Times, $3) }
   | expr INTDIV expr          { Binop ($1, IntDiv, $3) }
   | expr DIV expr             { Binop ($1, Div, $3) }
+  | MINUS expr %prec UMINUS   { Unop (Neg, $2) }
   | expr EQ expr              { Binop ($1, Eq, $3) }
   | expr NEQ expr             { Binop ($1, Neq, $3) }
   | expr LT expr              { Binop ($1, Less, $3) }
@@ -81,6 +83,7 @@ expr:
   | expr GEQ expr             { Binop ($1, Geq, $3) }
   | expr AND expr             { Binop ($1, And, $3) }
   | expr OR expr              { Binop ($1, Or, $3) }
+  | NOT expr                  { Unop (Not, $2) }
   | LPAREN expr RPAREN        { $2 }
   | ID LPAREN args_opt RPAREN { Call ($1, $3)  }
 
@@ -101,7 +104,8 @@ stmt:
   | dtype ID ASSIGN expr PERIOD                                  { Assign ($1, $2, $4) }
   | ID ASSIGN expr PERIOD                                        { Reassign ($1, $3) }
   | IF expr LCURLY stmt_list RCURLY ELSE LCURLY stmt_list RCURLY { If ($2, $4, $8) }
-  | LOOP ID IN expr TO expr loop_by LCURLY stmt_list RCURLY      { Loop ($2, $4, $6, $7, $9) }
+  | LOOP ID IN expr TO expr loop_by LCURLY stmt_list RCURLY      { IterLoop ($2, $4, $6, $7, $9) }
+  | LOOP expr LCURLY stmt_list RCURLY                            { CondLoop ($2, $4) }
   | RETURN expr PERIOD                                           { Return $2 }
 
 loop_by:
