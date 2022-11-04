@@ -1,8 +1,10 @@
 number a is 1.
 number b is 2.
 
-define foo(none -> none) {
-  return 1.
+define foo(number a -> number) {
+  loop a < 5 {
+    a is a + 1.
+  }
 }
 
-number c is foo().
+number c is foo(1).

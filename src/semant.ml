@@ -36,7 +36,8 @@ let check (prog: program): sprogram =
     | Binop (e1, op, e2) -> let (type1, sexpr1) = check_expr tbs e1 in let (type2, sexpr2) = check_expr tbs e2 in
         let final_type = if type1 = type2 then (
           match op with
-              (Plus | Minus | Times | IntDiv | Div | Mod | Eq | Neq | Less | Leq | Greater | Geq) when type1 = Number -> Number
+              (Plus | Minus | Times | IntDiv | Div | Mod) when type1 = Number -> Number
+            | (Eq | Neq | Less | Leq | Greater | Geq) when type1 = Number -> Bool
             | (And | Or) when type1 = Bool -> Bool
             | _ -> raise (Failure invalid_bop_args_err)
         ) else raise (Failure mismatched_bop_args_err)
