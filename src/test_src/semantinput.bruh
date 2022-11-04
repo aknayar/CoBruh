@@ -1,5 +1,6 @@
 number a is 5.
 number b is 6.
+# c is 7.
 
 define c (none -> none) {
   number a is 7.
@@ -10,7 +11,7 @@ define c (none -> none) {
     number a is 15.
     loop i in 0 to 10 by 2 {
       number a is 11.
-      number i is 12.
+      i is 5.
     }
     loop another_bool {
       number a is 12.
