@@ -1,4 +1,6 @@
 number a is 5.
 number b is 6.
 
-number a is 7.
+define a (none -> none) {
+
+}

@@ -6,17 +6,23 @@ module StringMap = Map.Make(String)
 let duplicate_err = "name already exists in scope"
 
 
-(* scopes for initialization: make sure name not in current scope *)
+(* tuple of var names map list (scopes), func names map (all global scope) *)
 
-let check prog =
-  let add_name_to_scope tb name = 
-    if StringMap.mem name tb then raise (Failure duplicate_err) 
-    else StringMap.add name () tb in
-  let add_decl_to_scope symbol_table = function
+let check (prog: program) =
+  let name_exists tbs name =
+    let (vars, funcs) = tbs in (StringMap.mem name vars || StringMap.mem name funcs)
+  in let check_assignment tbs t id e = 
+    if name_exists tbs id then raise (Failure duplicate_err) 
+    else (StringMap.add id t (fst tbs), snd tbs)
+  in let check_func tbs fn =
+    if name_exists tbs fn.fname then raise (Failure duplicate_err)
+    else (fst tbs, StringMap.add fn.fname fn.rtype (snd tbs))
+
+  in let add_decl_to_scope tbs = function
       Stmt st -> (
         match st with
-            Assign (t, id, e) -> add_name_to_scope symbol_table id
-          | _ -> symbol_table
+            Assign (t, id, e) -> check_assignment tbs t id e
+          | _ -> tbs
       )
-    | Func fn -> add_name_to_scope symbol_table fn.fname
-  in List.fold_left add_decl_to_scope StringMap.empty prog 
+    | Func fn -> check_func tbs fn
+  in List.fold_left add_decl_to_scope (StringMap.empty, StringMap.empty) prog 
