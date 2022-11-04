@@ -10,15 +10,16 @@ define bar(number a, number b -> boolean) {
 }
 
 define egg(boolean b, number n1, number n2 -> string) {
-  if b {
-    return "b is true".
+  if not b {
+    number a_ is n1 + n2.
+    return "b is false".
   }
   else {
-    if n1 > n2 {
-      return "n1 is greater".
+    if -n1 > -n2 {
+      return "n2 is greater".
     }
     else {
-      return "n1 is not greater".
+      return "n2 is not greater".
     }
   }
 }

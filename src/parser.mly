@@ -18,14 +18,15 @@
 %start program
 %type <Ast.program> program
 
-%right ASSIGN
+%nonassoc ASSIGN
 %left OR
 %left AND
 %right NOT
-%left EQ NEQ
-%left LT LEQ GT GEQ
+%nonassoc EQ NEQ
+%nonassoc LT LEQ GT GEQ
 %left PLUS MINUS
 %left TIMES INTDIV DIV MOD
+%nonassoc UMINUS
 
 %%
 
@@ -73,6 +74,7 @@ expr:
   | expr TIMES expr           { Binop ($1, Times, $3) }
   | expr INTDIV expr          { Binop ($1, IntDiv, $3) }
   | expr DIV expr             { Binop ($1, Div, $3) }
+  | MINUS expr %prec UMINUS   { Unop (Neg, $2) }
   | expr EQ expr              { Binop ($1, Eq, $3) }
   | expr NEQ expr             { Binop ($1, Neq, $3) }
   | expr LT expr              { Binop ($1, Less, $3) }
@@ -81,6 +83,7 @@ expr:
   | expr GEQ expr             { Binop ($1, Geq, $3) }
   | expr AND expr             { Binop ($1, And, $3) }
   | expr OR expr              { Binop ($1, Or, $3) }
+  | NOT expr                  { Unop (Not, $2) }
   | LPAREN expr RPAREN        { $2 }
   | ID LPAREN args_opt RPAREN { Call ($1, $3)  }
 

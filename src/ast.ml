@@ -9,7 +9,7 @@ type func_rtype =
     DType of dtype
   | None
 
-type op = 
+type bop = 
     Plus 
   | Minus 
   | Times 
@@ -25,13 +25,18 @@ type op =
   | And 
   | Or
 
+type uop = 
+    Not
+  | Neg
+
 type expr = 
     NumberLit of float 
   | BoolLit of bool 
   | StringLit of string 
   | CharLit of char 
   | Id of string 
-  | Binop of expr * op * expr
+  | Binop of expr * bop * expr
+  | Unop of uop * expr
   | Call of string * expr list
   
 type stmt = 
@@ -76,7 +81,7 @@ let string_of_func_rtype = function
     DType typ -> string_of_dtype typ
   | None -> "none"
 
-let string_of_op = function
+let string_of_bop = function
     Plus -> "+"
   | Minus -> "-"
   | Times -> "*"
@@ -92,16 +97,19 @@ let string_of_op = function
   | And -> "and"
   | Or -> "or"
 
+let string_of_uop = function
+    Not -> "not"
+  | Neg -> "-"
+
 let rec string_of_expr = function
     NumberLit n -> if classify_float (fst (modf n)) == FP_zero then string_of_int (Float.to_int n) else string_of_float n
   | BoolLit b -> if b then "true" else "false"
   | CharLit c -> "'" ^ Char.escaped c ^ "'"
   | StringLit s -> "\"" ^ s ^ "\""
   | Id id -> id
-  | Binop (e1, op, e2) ->
-      string_of_expr e1 ^ " " ^ string_of_op op ^ " " ^ string_of_expr e2
-  | Call (f, el) ->
-      f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+  | Binop (e1, op, e2) -> string_of_expr e1 ^ " " ^ string_of_bop op ^ " " ^ string_of_expr e2
+  | Unop (op, e) -> string_of_uop op ^ " " ^ string_of_expr e
+  | Call (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
 
 let rec string_of_stmt = function
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ ".\n"
