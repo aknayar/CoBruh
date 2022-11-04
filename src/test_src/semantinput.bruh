@@ -3,4 +3,17 @@ number b is 6.
 
 define c (none -> none) {
   number a is 7.
+  if placeholder_bool {
+    number a is 10.
+  }
+  else {
+    number a is 15.
+    loop i in 0 to 10 by 2 {
+      number a is 11.
+      number i is 12.
+    }
+    loop another_bool {
+      number a is 12.
+    }
+  }
 }

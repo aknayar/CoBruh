@@ -4,6 +4,7 @@ open Sast
 module StringMap = Map.Make(String)
 
 let duplicate_err = "name already exists in scope"
+let unimplemented_err = "unimplemented"
 
 
 (* tuple of var names map list (scopes), func names map (all global scope) *)
@@ -15,10 +16,12 @@ let check (prog: program) =
     match stmt with
         Assign (t, id, e) -> if name_exists (List.hd all_vars, funcs) id then raise (Failure duplicate_err) 
           else ((StringMap.add id t (List.hd all_vars))::List.tl all_vars, funcs)
-      | Reassign (id, e) -> tbs
+      | Reassign (id, e) -> raise (Failure unimplemented_err)
       | If (e, s1, s2) -> let _ = check_stmt_list (StringMap.empty::all_vars, funcs) s1 in 
           let _ = check_stmt_list (StringMap.empty::all_vars, funcs) s2 in tbs
-      | _ -> tbs
+      | IterLoop (id, s, e, b, st) -> let _ = check_stmt_list ((StringMap.add id Number StringMap.empty)::all_vars, funcs) st in tbs
+      | CondLoop (e, st) -> let _ = check_stmt_list (StringMap.empty::all_vars, funcs) st in tbs
+      | _ -> tbs (* no need to check scope *)
   and check_stmt_list tbs stmt_list = List.fold_left check_stmt tbs stmt_list
 
   in let check_func tbs fn =
