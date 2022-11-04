@@ -11,8 +11,8 @@ define foo(number a -> number) {
   }
 }
 
-define foo(none -> none) {
-  
+define bar(number a -> boolean) {
+  return a > 5.
 }
 
-number c is foo(1).
+boolean c is bar(1).
