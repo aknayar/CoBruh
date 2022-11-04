@@ -2,12 +2,13 @@
   open Ast
 %}
 
-%token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE PERIOD COMMA PIPE 
+%token LPAREN RPAREN LCURLY RCURLY LSQUARE RSQUARE PERIOD COMMA COLON PIPE 
 %token ASSIGN PLUS MINUS TIMES INTDIV DIV MOD EQ NEQ LT LEQ GT GEQ AND OR NOT
 %token IF ELSE LOOP IN TO BY
 %token CALL DEFINE NONE GIVES RETURN
 %token NUMBER BOOL CHAR STRING LIST 
 %token USE
+%token TAB
 %token EOF
 %token <float> NUMBERLIT
 %token <bool> BOOLLIT
@@ -53,13 +54,13 @@ opt_params_list:
 
 /* define foo(number bar -> string) */
 fdecl:
-  DEFINE ID LPAREN opt_params_list GIVES func_rtype RPAREN LCURLY stmt_list RCURLY
+  DEFINE ID LPAREN opt_params_list GIVES func_rtype RPAREN COLON LCURLY stmt_list RCURLY
   {
     {
       fname=$2;
       params=$4;
       rtype=$6;
-      body=$9
+      body=$10
     }
   }
 
@@ -100,13 +101,13 @@ stmt_list:
   | stmt stmt_list { $1::$2 }
 
 stmt:
-    expr PERIOD                                                  { Expr $1 }
-  | dtype ID ASSIGN expr PERIOD                                  { Assign ($1, $2, $4) }
-  | ID ASSIGN expr PERIOD                                        { Reassign ($1, $3) }
-  | IF expr LCURLY stmt_list RCURLY ELSE LCURLY stmt_list RCURLY { If ($2, $4, $8) }
-  | LOOP ID IN expr TO expr loop_by LCURLY stmt_list RCURLY      { IterLoop ($2, $4, $6, $7, $9) }
-  | LOOP expr LCURLY stmt_list RCURLY                            { CondLoop ($2, $4) }
-  | RETURN expr PERIOD                                           { Return $2 }
+    expr PERIOD                                                              { Expr $1 }
+  | dtype ID ASSIGN expr PERIOD                                              { Assign ($1, $2, $4) }
+  | ID ASSIGN expr PERIOD                                                    { Reassign ($1, $3) }
+  | IF expr COLON LCURLY stmt_list RCURLY ELSE COLON LCURLY stmt_list RCURLY { If ($2, $5, $10) }
+  | LOOP ID IN expr TO expr loop_by COLON LCURLY stmt_list RCURLY            { IterLoop ($2, $4, $6, $7, $10) }
+  | LOOP expr COLON LCURLY stmt_list RCURLY                                  { CondLoop ($2, $5) }
+  | RETURN expr PERIOD                                                       { Return $2 }
 
 loop_by:
     /* nothing */ { NumberLit 1. }
