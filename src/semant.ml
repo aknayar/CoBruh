@@ -3,12 +3,13 @@ open Sast
 
 module StringMap = Map.Make(String)
 
-let duplicate_err = "name already exists in scope"
+let duplicate_id_err = "variable name already exists in scope"
 let missing_id_err = "variable does not exist"
 let invalid_assignment_err = "variable type does not match assigned value"
 let invalid_if_err = "if must take in a boolean"
 let invalid_iter_loop_err = "iterative loop must take in numbers"
 let invalid_cond_loop_err = "conditional loop must take in a boolean"
+let duplicate_func_err = "function name already exists"
 let missing_func_err = "function does not exist"
 let invalid_bop_args_err = "invalid arguments for binary operator"
 let mismatched_bop_args_err = "mismatched arguments for binary operator"
@@ -61,7 +62,7 @@ let check (prog: program): sprogram =
   in let rec check_stmt tbs stmt = let (all_ids, funcs) = tbs in
     match stmt with
         Expr e -> (tbs, SExpr (check_expr tbs e))
-      | Assign (t, id, e) -> if name_exists (List.hd all_ids, funcs) id then raise (Failure duplicate_err) 
+      | Assign (t, id, e) -> if name_exists (List.hd all_ids, funcs) id then raise (Failure duplicate_id_err) 
           else let (expr_type, s_expr) = check_expr tbs e in
           if t != expr_type then raise (Failure invalid_assignment_err)
           else (((StringMap.add id t (List.hd all_ids))::List.tl all_ids, funcs), SAssign (t, id, (expr_type, s_expr)))
@@ -82,7 +83,7 @@ let check (prog: program): sprogram =
 
   in let check_func tbs fn =
     let (all_ids, funcs) = tbs in
-    if name_exists (List.hd all_ids, funcs) fn.fname then raise (Failure duplicate_err)
+    if name_exists (List.hd all_ids, funcs) fn.fname then raise (Failure duplicate_func_err)
     else let sstmt_list = snd (check_stmt_list tbs fn.body) in
     let _ = match fn.rtype with
         None -> List.iter (fun s_stmt -> match s_stmt with
