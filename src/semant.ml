@@ -11,18 +11,25 @@ let duplicate_err = "name already exists in scope"
 let check (prog: program) =
   let name_exists tbs name =
     let (vars, funcs) = tbs in (StringMap.mem name vars || StringMap.mem name funcs)
-  in let check_assignment tbs t id e = 
-    if name_exists tbs id then raise (Failure duplicate_err) 
-    else (StringMap.add id t (fst tbs), snd tbs)
-  in let check_func tbs fn =
-    if name_exists tbs fn.fname then raise (Failure duplicate_err)
-    else (fst tbs, StringMap.add fn.fname fn.rtype (snd tbs))
+  in let rec check_stmt tbs stmt = let (all_vars, funcs) = tbs in
+    match stmt with
+        Assign (t, id, e) -> if name_exists (List.hd all_vars, funcs) id then raise (Failure duplicate_err) 
+          else ((StringMap.add id t (List.hd all_vars))::List.tl all_vars, funcs)
+      | Reassign (id, e) -> tbs
+      | If (e, s1, s2) -> let _ = check_stmt_list (StringMap.empty::all_vars, funcs) s1 in 
+          let _ = check_stmt_list (StringMap.empty::all_vars, funcs) s2 in tbs
+      | _ -> tbs
+  and check_stmt_list tbs stmt_list = List.fold_left check_stmt tbs stmt_list
 
-  in let add_decl_to_scope tbs = function
-      Stmt st -> (
-        match st with
-            Assign (t, id, e) -> check_assignment tbs t id e
-          | _ -> tbs
-      )
-    | Func fn -> check_func tbs fn
-  in List.fold_left add_decl_to_scope (StringMap.empty, StringMap.empty) prog 
+  in let check_func tbs fn =
+    let (all_vars, funcs) = tbs in
+    if name_exists (List.hd all_vars, funcs) fn.fname then raise (Failure duplicate_err)
+    else let _  = check_stmt_list (StringMap.empty::all_vars, funcs) fn.body in 
+    (all_vars, StringMap.add fn.fname fn.rtype funcs)
+
+  in let check_decl tbs = function
+      Stmt st -> check_stmt tbs st
+    | Func fn -> let res = check_func tbs fn in res
+  in let check_program tbs = List.fold_left check_decl tbs prog
+  in check_program ([StringMap.empty], StringMap.empty)
+  
