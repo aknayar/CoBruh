@@ -1,6 +1,6 @@
 number a is 5.
 number b is 6.
-# c is 7.
+c is 7.
 
 define c (none -> none) {
   number a is 7.
