@@ -24,7 +24,7 @@ type sfunc = {
   sfname: string;
   sparams: bind list;
   srtype: func_rtype;
-  body: sstmt list;
+  sbody: sstmt list;
 }
 
 type sdecl = 
