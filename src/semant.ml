@@ -81,7 +81,6 @@ let check (prog: program): sprogram =
       | Return e -> (tbs, SReturn (check_expr tbs e))
   and check_stmt_list tables stmt_list = List.fold_left_map check_stmt tables stmt_list
 
-<<<<<<< HEAD
   in let check_func tbs fn =
     let (all_ids, funcs) = tbs in
     if name_exists (List.hd all_ids, funcs) fn.fname then raise (Failure duplicate_func_err)
@@ -108,30 +107,3 @@ let check (prog: program): sprogram =
 
   in snd (List.fold_left_map check_decl ([StringMap.empty], StringMap.empty) prog)
   
-=======
-let check (prog: program) =
-  let name_exists tbs name =
-    let (vars, funcs) = tbs in (StringMap.mem name vars || StringMap.mem name funcs)
-  in let rec check_stmt tbs stmt = let (all_vars, funcs) = tbs in
-    match stmt with
-        Assign (t, id, e) -> if name_exists (List.hd all_vars, funcs) id then raise (Failure duplicate_err) 
-          else ((StringMap.add id t (List.hd all_vars))::List.tl all_vars, funcs)
-      | Reassign (id, e) -> tbs
-      | If (e, s1, s2) -> let _ = check_stmt_list (StringMap.empty::all_vars, funcs) s1 in 
-          let _ = check_stmt_list (StringMap.empty::all_vars, funcs) s2 in tbs
-      | _ -> tbs
-  and check_stmt_list tbs stmt_list = List.fold_left check_stmt tbs stmt_list
-
-  in let check_func tbs fn =
-    let (all_vars, funcs) = tbs in
-    if name_exists (List.hd all_vars, funcs) fn.fname then raise (Failure duplicate_err)
-    else let _  = check_stmt_list (StringMap.empty::all_vars, funcs) fn.body in 
-    (all_vars, StringMap.add fn.fname fn.rtype funcs)
-
-  in let check_decl tbs = function
-      Stmt st -> check_stmt tbs st
-    | Func fn -> let res = check_func tbs fn in res
-  in let check_program tbs = List.fold_left check_decl tbs prog
-  in check_program ([StringMap.empty], StringMap.empty)
-  
->>>>>>> dbfa203 (Add basic scoping: same variable name can be initialized in a different scope)
