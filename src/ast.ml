@@ -47,19 +47,23 @@ type bind = dtype * string (* number x, only appears in function parameters *)
 (* 
   define foo(number bar -> string)
 
-  func_def:
+  func:
     fname: function name
     params: parameters
     rtype: return type
 *)
-type func_def = {
+type func = {
   fname: string;
   params: bind list;
   rtype: func_rtype;
   body: stmt list;
 }
 
-type program = stmt list * func_def list
+type decl =
+    Stmt of stmt
+  | Func of func
+
+type program = decl list
 
 let rec string_of_dtype = function
     Number -> "number"
@@ -114,12 +118,15 @@ let string_of_func_params (binds: bind list) =
       [] -> "none"
     | _ -> String.concat ", " (List.map string_of_bind binds)
   
-let string_of_func_def (fn: func_def) = "define " ^ fn.fname 
+let string_of_func (fn: func) = "define " ^ fn.fname 
   ^ " (" ^ string_of_func_params fn.params
   ^ " -> " ^ string_of_func_rtype fn.rtype ^ ")\n{\n"
   ^ String.concat "" (List.map string_of_stmt fn.body) ^ "}\n"
 
 let string_of_program (prog: program) =
   "Parsed program: \n\n" ^
-  String.concat "" (List.map string_of_stmt (fst prog)) ^ "\n" ^
-  String.concat "\n" (List.map string_of_func_def (snd prog))
+  String.concat "" (List.map (fun (d: decl): string -> 
+    match d with
+        Stmt st -> string_of_stmt st
+      | Func fn -> string_of_func fn
+  ) prog)

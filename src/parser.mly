@@ -34,9 +34,9 @@ program:
 
 /* tuple of (stmts, funcs) */
 decls:
-   /* nothing */ { ([], []) }
- | stmt decls    { (($1 :: fst $2), snd $2) }
- | fdecl decls   { (fst $2, ($1 :: snd $2)) }
+   /* nothing */ { [] }
+ | stmt decls    { (Stmt $1)::$2 }
+ | fdecl decls   { (Func $1)::$2 }
 
 bind:
   dtype ID { ($1, $2) }
