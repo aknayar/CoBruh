@@ -33,7 +33,7 @@
 program:
   decls EOF { $1 }
 
-/* tuple of (stmts, funcs) */
+/* list of stmts and funcs */
 decls:
    /* nothing */ { [] }
  | stmt decls    { (Stmt $1)::$2 }
