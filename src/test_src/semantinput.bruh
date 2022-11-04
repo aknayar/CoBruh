@@ -1,20 +1,8 @@
-number a is 5.
-number b is 6.
-c is 7.
+number a is 1.
+number b is 2.
 
-define c (none -> none) {
-  number a is 7.
-  if placeholder_bool {
-    number a is 10.
-  }
-  else {
-    number a is 15.
-    loop i in 0 to 10 by 2 {
-      number a is 11.
-      i is 5.
-    }
-    loop another_bool {
-      number a is 12.
-    }
-  }
+define foo(none -> none) {
+  return 1.
 }
+
+number c is foo().
