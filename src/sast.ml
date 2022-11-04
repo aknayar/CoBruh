@@ -7,7 +7,8 @@ and sx =
   | SStringLit of string
   | SCharLit of char
   | SId of string
-  | SBinop of sexpr * op * sexpr
+  | SBinop of sexpr * bop * sexpr
+  | SUnop of uop * sexpr
   | SCall of string * sexpr list
 
 type sstmt = 
@@ -15,7 +16,8 @@ type sstmt =
   | SAssign of dtype * string * sexpr
   | SReassign of string * sexpr
   | SIf of sexpr * sstmt list * sstmt list
-  | SLoop of string * sexpr * sexpr * sexpr * sstmt list
+  | SIterLoop of string * sexpr * sexpr * sexpr * sstmt list
+  | SCondLoop of sexpr * sstmt list
   | SReturn of sexpr
 
 type sfunc = {
@@ -25,5 +27,9 @@ type sfunc = {
   body: sstmt list;
 }
 
-type sprogram = sstmt list * sfunc list
+type sdecl = 
+    SStmt of sstmt
+  | SFunc of sfunc
+
+type sprogram = sdecl list
 
