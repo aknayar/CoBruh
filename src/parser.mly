@@ -104,7 +104,8 @@ stmt:
   | dtype ID ASSIGN expr PERIOD                                  { Assign ($1, $2, $4) }
   | ID ASSIGN expr PERIOD                                        { Reassign ($1, $3) }
   | IF expr LCURLY stmt_list RCURLY ELSE LCURLY stmt_list RCURLY { If ($2, $4, $8) }
-  | LOOP ID IN expr TO expr loop_by LCURLY stmt_list RCURLY      { Loop ($2, $4, $6, $7, $9) }
+  | LOOP ID IN expr TO expr loop_by LCURLY stmt_list RCURLY      { IterLoop ($2, $4, $6, $7, $9) }
+  | LOOP expr LCURLY stmt_list RCURLY                            { CondLoop ($2, $4) }
   | RETURN expr PERIOD                                           { Return $2 }
 
 loop_by:

@@ -44,7 +44,8 @@ type stmt =
   | Assign of dtype * string * expr
   | Reassign of string * expr
   | If of expr * stmt list * stmt list
-  | Loop of string * expr * expr * expr * stmt list
+  | IterLoop of string * expr * expr * expr * stmt list
+  | CondLoop of expr * stmt list
   | Return of expr
 
 type bind = dtype * string (* number x, only appears in function parameters *)
@@ -116,7 +117,8 @@ let rec string_of_stmt = function
   | Reassign (id, e) -> id ^ " is " ^ string_of_expr e ^ ".\n"
   | Expr ex -> string_of_expr ex ^ ".\n"
   | If (e, s1, s2) ->  "if " ^ string_of_expr e ^ "\n{\n" ^ String.concat "" (List.map string_of_stmt s1) ^ "}\nelse\n{\n" ^ String.concat "" (List.map string_of_stmt s2) ^ "}\n"
-  | Loop (id, s, e, b, st) -> "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ "\n{\n" ^ String.concat "" (List.map string_of_stmt st) ^ "}\n"
+  | IterLoop (id, s, e, b, st) -> "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ "\n{\n" ^ String.concat "" (List.map string_of_stmt st) ^ "}\n"
+  | CondLoop (e, st) -> "loop " ^ string_of_expr e ^ "\n{\n" ^ String.concat "" (List.map string_of_stmt st) ^ "}\n"
   | Return ex -> "return " ^ string_of_expr ex ^ ".\n"
 
 let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id
