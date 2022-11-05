@@ -65,46 +65,38 @@ fdecl:
   }
 
 expr:
-    NUMBERLIT                 { NumberLit $1 }
-  | BOOLLIT                   { BoolLit $1 }
-  | STRINGLIT                 { StringLit $1 }
-  | CHARLIT                   { CharLit $1 }
-  | LSQUARE elems_opt RSQUARE { ListLit ($2) } 
-  | ID                        { Id $1 }
-  | expr PLUS expr            { Binop ($1, Plus, $3) }
-  | expr MINUS expr           { Binop ($1, Minus, $3) }
-  | expr TIMES expr           { Binop ($1, Times, $3) }
-  | expr INTDIV expr          { Binop ($1, IntDiv, $3) }
-  | expr DIV expr             { Binop ($1, Div, $3) }
-  | MINUS expr %prec UMINUS   { Unop (Neg, $2) }
-  | expr EQ expr              { Binop ($1, Eq, $3) }
-  | expr NEQ expr             { Binop ($1, Neq, $3) }
-  | expr LT expr              { Binop ($1, Less, $3) }
-  | expr LEQ expr             { Binop ($1, Leq, $3) }
-  | expr GT expr              { Binop ($1, Greater, $3) }
-  | expr GEQ expr             { Binop ($1, Geq, $3) }
-  | expr AND expr             { Binop ($1, And, $3) }
-  | expr OR expr              { Binop ($1, Or, $3) }
-  | NOT expr                  { Unop (Not, $2) }
-  | LPAREN expr RPAREN        { $2 }
-  | ID LPAREN args_opt RPAREN { Call ($1, $3) }
-  | ID LSQUARE expr RSQUARE   { Elem ($1, $3) }
+    NUMBERLIT                      { NumberLit $1 }
+  | BOOLLIT                        { BoolLit $1 }
+  | STRINGLIT                      { StringLit $1 }
+  | CHARLIT                        { CharLit $1 }
+  | LSQUARE expr_list_opt RSQUARE  { ListLit ($2) } 
+  | ID                             { Id $1 }
+  | expr PLUS expr                 { Binop ($1, Plus, $3) }
+  | expr MINUS expr                { Binop ($1, Minus, $3) }
+  | expr TIMES expr                { Binop ($1, Times, $3) }
+  | expr INTDIV expr               { Binop ($1, IntDiv, $3) }
+  | expr DIV expr                  { Binop ($1, Div, $3) }
+  | MINUS expr %prec UMINUS        { Unop (Neg, $2) }
+  | expr EQ expr                   { Binop ($1, Eq, $3) }
+  | expr NEQ expr                  { Binop ($1, Neq, $3) }
+  | expr LT expr                   { Binop ($1, Less, $3) }
+  | expr LEQ expr                  { Binop ($1, Leq, $3) }
+  | expr GT expr                   { Binop ($1, Greater, $3) }
+  | expr GEQ expr                  { Binop ($1, Geq, $3) }
+  | expr AND expr                  { Binop ($1, And, $3) }
+  | expr OR expr                   { Binop ($1, Or, $3) }
+  | NOT expr                       { Unop (Not, $2) }
+  | LPAREN expr RPAREN             { $2 }
+  | ID LPAREN expr_list_opt RPAREN { Call ($1, $3) }
+  | ID LSQUARE expr RSQUARE        { Elem ($1, $3) }
 
-args_opt:
+expr_list_opt:
     /*nothing*/ { [] }
-  | args        { $1 }
+  | expr_list        { $1 }
 
-args:
+expr_list:
     expr            { [$1] }
-  | expr COMMA args { $1::$3 }
-
-elems_opt:
-    /*nothing*/  { [] }
-  | elems        { $1 }
-
-elems:
-    expr             { [$1] }
-  | expr COMMA elems { $1::$3 }
+  | expr COMMA expr_list { $1::$3 }
 
 stmt_list:
     /* nothing */  { [] }
