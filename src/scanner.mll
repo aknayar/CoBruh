@@ -1,5 +1,9 @@
 {
   open Parser
+
+  let curr_indent = ref 0
+  let indent_count = ref 0
+  let count_indent = ref true
 }
 
 let letter = ['a'-'z' 'A'-'Z']
@@ -13,18 +17,16 @@ let character = ''' ascii '''
 let string = '"' ascii* '"'
 
 rule token = parse
-  [' ' '\r' '\n'] { token lexbuf } (* whitespace *)
-| '\t'            { TAB }
-| '#'             { comment lexbuf } (* comment *)
+  ['\t' '\r'] { token lexbuf } (* whitespace *)
+| "  "        { if !count_indent then indent_count := !indent_count + 1 else (); INDENT }
+| '\n'        { count_indent := true; EOL }
+| '#'         { comment lexbuf } (* comment *)
 
 (* Symbols *)
 | '(' { LPAREN }
 | ')' { RPAREN }
-| '{' { LCURLY }
-| '}' { RCURLY }
 | '[' { LSQUARE }
 | ']' { RSQUARE }
-| '.' { PERIOD }
 | ',' { COMMA }
 | ':' { COLON }
 | '|' { PIPE }
