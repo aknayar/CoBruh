@@ -39,6 +39,7 @@ type expr =
   | Binop of expr * bop * expr
   | Unop of uop * expr
   | Call of string * expr list
+  | Elem of string * expr
   
 type stmt = 
     Expr of expr
@@ -113,6 +114,7 @@ let rec string_of_expr = function
   | Binop (e1, op, e2) -> string_of_expr e1 ^ " " ^ string_of_bop op ^ " " ^ string_of_expr e2
   | Unop (op, e) -> string_of_uop op ^ " " ^ string_of_expr e
   | Call (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+  | Elem (l, e) -> l ^ "[" ^ string_of_expr e ^ "]"
 
 let rec string_of_stmt = function
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ ".\n"

@@ -88,6 +88,7 @@ expr:
   | NOT expr                  { Unop (Not, $2) }
   | LPAREN expr RPAREN        { $2 }
   | ID LPAREN args_opt RPAREN { Call ($1, $3) }
+  | ID LSQUARE expr RSQUARE   { Elem ($1, $3) }
 
 args_opt:
     /*nothing*/ { [] }
