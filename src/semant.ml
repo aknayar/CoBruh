@@ -6,19 +6,19 @@ module StringMap = Map.Make(String)
 let duplicate_id_err = "variable name already exists in scope"
 let missing_id_err = "variable does not exist"
 let invalid_assignment_err = "variable type does not match assigned value"
-let invalid_if_err = "if must take in a boolean"
+let invalid_if_err = "if must take in a boolean expression"
 let invalid_iter_loop_err = "iterative loop must take in numbers"
-let invalid_cond_loop_err = "conditional loop must take in a boolean"
+let invalid_cond_loop_err = "conditional loop must take in a boolean expression"
 let duplicate_func_err = "function name already exists"
 let missing_func_err = "function does not exist"
 let invalid_bop_args_err = "invalid arguments for binary operator"
 let mismatched_bop_args_err = "mismatched arguments for binary operator"
 let invalid_unop_args_err = "invalid argument for unary operator"
-let none_return_err = "function does not return anything"
+let none_return_err = "function with non-none return type does not return anything"
 let mismatched_func_args_err = "mismatched arguments for function call"
 let return_in_global_err = "cannot return outside a function" (* TODO: implement *)
 let return_in_none_err = "function that returns none cannot have return statement"
-let mismatched_return_err = "function signature and return type do not match"
+let mismatched_return_err = "incorrect function return type"
 let missing_return_err = "missing return statement"
 let unimplemented_err = "unimplemented"
 
@@ -86,6 +86,7 @@ let check (prog: program): sprogram =
     let (all_ids, funcs) = tbs in
     if name_exists (List.hd all_ids, funcs) fn.fname then raise (Failure duplicate_func_err)
     else let sstmt_list = snd (check_stmt_list tbs fn.body) in
+    (* TODO: better return checking *)
     let _ = match fn.rtype with
         None -> List.iter (fun s_stmt -> match s_stmt with
               SReturn _ -> raise (Failure return_in_none_err)
