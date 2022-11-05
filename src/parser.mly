@@ -67,8 +67,8 @@ fdecl:
 expr:
     NUMBERLIT                      { NumberLit $1 }
   | BOOLLIT                        { BoolLit $1 }
-  | STRINGLIT                      { StringLit $1 }
   | CHARLIT                        { CharLit $1 }
+  | STRINGLIT                      { StringLit $1 }
   | LSQUARE expr_list_opt RSQUARE  { ListLit ($2) } 
   | ID                             { Id $1 }
   | expr PLUS expr                 { Binop ($1, Plus, $3) }
@@ -91,11 +91,11 @@ expr:
   | ID LSQUARE expr RSQUARE        { Elem ($1, $3) }
 
 expr_list_opt:
-    /*nothing*/ { [] }
-  | expr_list        { $1 }
+    /* nothing */ { [] }
+  | expr_list     { $1 }
 
 expr_list:
-    expr            { [$1] }
+    expr                 { [$1] }
   | expr COMMA expr_list { $1::$3 }
 
 stmt_list:
