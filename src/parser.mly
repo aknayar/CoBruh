@@ -69,6 +69,7 @@ expr:
   | BOOLLIT                   { BoolLit $1 }
   | STRINGLIT                 { StringLit $1 }
   | CHARLIT                   { CharLit $1 }
+  | LSQUARE elems_opt RSQUARE { ListLit ($2) } 
   | ID                        { Id $1 }
   | expr PLUS expr            { Binop ($1, Plus, $3) }
   | expr MINUS expr           { Binop ($1, Minus, $3) }
@@ -87,7 +88,6 @@ expr:
   | NOT expr                  { Unop (Not, $2) }
   | LPAREN expr RPAREN        { $2 }
   | ID LPAREN args_opt RPAREN { Call ($1, $3) }
-  | LSQUARE elems_opt RSQUARE { ListLit ($2) } 
 
 args_opt:
     /*nothing*/ { [] }
@@ -102,7 +102,7 @@ elems_opt:
   | elems        { $1 }
 
 elems:
-    expr             {[$1]}
+    expr             { [$1] }
   | expr COMMA elems { $1::$3 }
 
 stmt_list:

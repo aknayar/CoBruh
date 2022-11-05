@@ -77,7 +77,7 @@ let rec string_of_dtype = function
   | Bool -> "boolean"
   | Char -> "character"
   | String -> "string"
-  | List d -> string_of_dtype d ^ "list"
+  | List d -> string_of_dtype d ^ " list"
 
 let string_of_func_rtype = function
     DType typ -> string_of_dtype typ
@@ -108,7 +108,7 @@ let rec string_of_expr = function
   | BoolLit b -> if b then "true" else "false"
   | CharLit c -> "'" ^ Char.escaped c ^ "'"
   | StringLit s -> "\"" ^ s ^ "\""
-  | ListLit el -> "[" ^ String.concat ", " (List.map string_of_expr el) ^ "\""
+  | ListLit el -> "[" ^ String.concat ", " (List.map string_of_expr el) ^ "]"
   | Id id -> id
   | Binop (e1, op, e2) -> string_of_expr e1 ^ " " ^ string_of_bop op ^ " " ^ string_of_expr e2
   | Unop (op, e) -> string_of_uop op ^ " " ^ string_of_expr e
