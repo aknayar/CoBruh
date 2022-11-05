@@ -34,10 +34,12 @@ type expr =
   | BoolLit of bool 
   | StringLit of string 
   | CharLit of char 
+  | ListLit of expr list 
   | Id of string 
   | Binop of expr * bop * expr
   | Unop of uop * expr
   | Call of string * expr list
+  | Elem of string * expr
   
 type stmt = 
     Expr of expr
@@ -76,7 +78,7 @@ let rec string_of_dtype = function
   | Bool -> "boolean"
   | Char -> "character"
   | String -> "string"
-  | List d -> string_of_dtype d ^ "list"
+  | List d -> string_of_dtype d ^ " list"
 
 let string_of_func_rtype = function
     DType typ -> string_of_dtype typ
@@ -107,10 +109,12 @@ let rec string_of_expr = function
   | BoolLit b -> if b then "true" else "false"
   | CharLit c -> "'" ^ Char.escaped c ^ "'"
   | StringLit s -> "\"" ^ s ^ "\""
+  | ListLit el -> "[" ^ String.concat ", " (List.map string_of_expr el) ^ "]"
   | Id id -> id
   | Binop (e1, op, e2) -> string_of_expr e1 ^ " " ^ string_of_bop op ^ " " ^ string_of_expr e2
   | Unop (op, e) -> string_of_uop op ^ " " ^ string_of_expr e
   | Call (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
+  | Elem (l, e) -> l ^ "[" ^ string_of_expr e ^ "]"
 
 let rec string_of_stmt = function
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ ".\n"
