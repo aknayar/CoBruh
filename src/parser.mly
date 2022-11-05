@@ -86,7 +86,8 @@ expr:
   | expr OR expr              { Binop ($1, Or, $3) }
   | NOT expr                  { Unop (Not, $2) }
   | LPAREN expr RPAREN        { $2 }
-  | ID LPAREN args_opt RPAREN { Call ($1, $3)  }
+  | ID LPAREN args_opt RPAREN { Call ($1, $3) }
+  | LSQUARE elems_opt RSQUARE { ListLit ($2) } 
 
 args_opt:
     /*nothing*/ { [] }
@@ -95,6 +96,14 @@ args_opt:
 args:
     expr            { [$1] }
   | expr COMMA args { $1::$3 }
+
+elems_opt:
+    /*nothing*/  { [] }
+  | elems        { $1 }
+
+elems:
+    expr             {[$1]}
+  | expr COMMA elems { $1::$3 }
 
 stmt_list:
     /* nothing */  { [] }

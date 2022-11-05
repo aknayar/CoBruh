@@ -41,3 +41,7 @@ foo().
 x.
 
 x is 7. # I love CoBruh!
+
+number list l1 is [1, 2, 3].
+number list l2 is [].
+number list list l3 is [l1, l2].

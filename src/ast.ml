@@ -34,6 +34,7 @@ type expr =
   | BoolLit of bool 
   | StringLit of string 
   | CharLit of char 
+  | ListLit of expr list 
   | Id of string 
   | Binop of expr * bop * expr
   | Unop of uop * expr
@@ -107,6 +108,7 @@ let rec string_of_expr = function
   | BoolLit b -> if b then "true" else "false"
   | CharLit c -> "'" ^ Char.escaped c ^ "'"
   | StringLit s -> "\"" ^ s ^ "\""
+  | ListLit el -> "[" ^ String.concat ", " (List.map string_of_expr el) ^ "\""
   | Id id -> id
   | Binop (e1, op, e2) -> string_of_expr e1 ^ " " ^ string_of_bop op ^ " " ^ string_of_expr e2
   | Unop (op, e) -> string_of_uop op ^ " " ^ string_of_expr e
