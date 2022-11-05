@@ -18,7 +18,8 @@ let none_return_err = "function does not return anything"
 let mismatched_func_args_err = "mismatched arguments for function call"
 let return_in_global_err = "cannot return outside a function" (* TODO: implement *)
 let return_in_none_err = "function that returns none cannot have return statement"
-let mismatched_return_err = "incorrect function return"
+let mismatched_return_err = "function signature and return type do not match"
+let missing_return_err = "missing return statement"
 let unimplemented_err = "unimplemented"
 
 let check (prog: program): sprogram =
@@ -87,13 +88,14 @@ let check (prog: program): sprogram =
     else let sstmt_list = snd (check_stmt_list tbs fn.body) in
     let _ = match fn.rtype with
         None -> List.iter (fun s_stmt -> match s_stmt with
-            SReturn _ -> raise (Failure return_in_none_err)
-          | _ -> () 
-        ) sstmt_list 
-      | DType r_type -> List.iter (fun s_stmt -> match s_stmt with
-            SReturn return_sexpr -> if r_type != fst return_sexpr then raise (Failure mismatched_return_err)
-          | _ -> ()
-        ) sstmt_list
+              SReturn _ -> raise (Failure return_in_none_err)
+            | _ -> () 
+          ) sstmt_list 
+      | DType r_type -> let return_exists = List.fold_left (fun return_found s_stmt -> match s_stmt with
+              SReturn return_sexpr -> if r_type != fst return_sexpr then raise (Failure mismatched_return_err) else true
+            | _ -> return_found
+          ) false sstmt_list in
+          if not return_exists then raise (Failure missing_return_err) else ()
     in ((all_ids, StringMap.add fn.fname fn funcs), {
       sfname = fn.fname;
       sparams = fn.params;
