@@ -8,29 +8,28 @@ define bar (number a, number b -> boolean):
   return a == b.
 
 define egg (boolean b, number n1, number n2 -> string):
-  if not b: {
+  if not b:
     number a is 0.
     loop not b:
       a is a + n1 + n2.
-
+    
     return "b is false".
-
+  
   else:
     if -n1 > -n2:
       return "n2 is greater".
-
+    
     else:
       return "n2 is not greater".
-
+    
   
-
 
 define dog (none -> none): 
   number a is 0.
-  loop i in 0 to 10: 
+  loop i in 0 to 10:
     a is a + 1.
   
-  loop i in 0 to 10 by 2: 
+  loop i in 0 to 10 by 2:
     a is a + 5.
   
 
@@ -38,7 +37,7 @@ define dog (none -> none):
 foo().
 x.
 
-x is 7. # I love CoBruh!
+x is 7.
 
 number list l1 is [1, 2, 3].
 number list l2 is [].

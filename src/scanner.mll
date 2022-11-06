@@ -3,7 +3,7 @@
 
   let curr_indent_level = ref 0
   let rec count_indents_with_n ws = (String.length ws - 1) / 2
-  let rec make_dedent_list num_dedents = if num_dedents = 0 then [] else DEDENT::(make_dedent_list (num_dedents - 1))
+  (* let rec make_dedent_list num_dedents = if num_dedents = 0 then [] else DEDENT::(make_dedent_list (num_dedents - 1)) *)
 
   let unnecessary_indentation_err = "unnecessary indentation"
   let excess_indent_err = "too many indentations"
@@ -25,13 +25,13 @@ let character = ''' ascii '''
 let string = '"' ascii* '"'
 
 rule token = parse
-  ['\t' '\r']  { token lexbuf } (* whitespace *)
+  [' ' '\t' '\r']  { token lexbuf } (* whitespace *)
 | eol_ws as ws { let indent_level = count_indents_with_n ws in
                  let indent_diff = indent_level - !curr_indent_level in
                  let _ = (curr_indent_level := indent_level) in
-                 if indent_diff > 1 then raise (Failure excess_indent_err)
+                 if Int.abs indent_diff > 1 then raise (Failure excess_indent_err)
                  else if indent_diff = 1 then INDENT
-                 else if indent_diff < 0 then make_dedent_list (-indent_diff)
+                 else if indent_diff = -1 then DEDENT (* make_dedent_list (-indent_diff) *)
                  else token lexbuf }
 | indent+      { raise (Failure unnecessary_indentation_err) }
 | '#'          { comment lexbuf } (* comment *)
