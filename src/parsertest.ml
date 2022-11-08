@@ -6,7 +6,7 @@ let deflate token =
   fun lexbuf -> 
     if not (Queue.is_empty q) then Queue.pop q else   
       match token lexbuf with 
-        | [   ] -> EOF 
+        | [] -> EOF 
         | [tok] -> tok
         | hd::tl -> List.iter (fun tok -> Queue.add tok q) tl ; hd 
 
