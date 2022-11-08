@@ -73,11 +73,7 @@ type decl =
 
 type program = decl list
 
-let curr_indent_level = ref 0;;
-let incr_cil = curr_indent_level := !curr_indent_level + 1
-let decr_cil = curr_indent_level := !curr_indent_level - 1
-
-let string_of_indents = String.concat "" (List.init (!curr_indent_level) (fun x->"  "))
+let curr_indent_level = ref 0
 
 let rec string_of_dtype = function
     Number -> "number"

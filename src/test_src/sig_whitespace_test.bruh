@@ -1,6 +1,5 @@
 number sum is 0.
 
-# there is an issue if you put empty lines
 define foo(number a -> number): 
   loop a < 5: 
     a is a + 1. 
