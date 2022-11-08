@@ -13,7 +13,6 @@ define egg (boolean b, number n1, number n2 -> string):
     number a is 0.
     loop not b:
       a is a + n1 + n2.
-    
     return "b is false".
   
   else:
