@@ -73,6 +73,8 @@ type decl =
 
 type program = decl list
 
+let curr_indent_level = ref 0
+
 let rec string_of_dtype = function
     Number -> "number"
   | Bool -> "boolean"
@@ -116,14 +118,36 @@ let rec string_of_expr = function
   | Call (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | Elem (l, e) -> l ^ "[" ^ string_of_expr e ^ "]"
 
-let rec string_of_stmt = function
+
+let rec string_of_stmt s = 
+  let string_of_stmt_raw = function
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ ".\n"
   | Reassign (id, e) -> id ^ " is " ^ string_of_expr e ^ ".\n"
   | Expr ex -> string_of_expr ex ^ ".\n"
-  | If (e, s1, s2) ->  "if " ^ string_of_expr e ^ ": {\n" ^ String.concat "" (List.map string_of_stmt s1) ^ "}\nelse: {\n" ^ String.concat "" (List.map string_of_stmt s2) ^ "}\n"
-  | IterLoop (id, s, e, b, st) -> "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ ": {\n" ^ String.concat "" (List.map string_of_stmt st) ^ "}\n"
-  | CondLoop (e, st) -> "loop " ^ string_of_expr e ^ ": {\n" ^ String.concat "" (List.map string_of_stmt st) ^ "}\n"
-  | Return ex -> "return " ^ string_of_expr ex ^ ".\n"
+  | If (e, s1, s2) ->
+      let if_str = "if " ^ string_of_expr e ^ ":\n" in
+      let _  = curr_indent_level := !curr_indent_level + 1 in
+      let if_stmts = String.concat "" (List.map string_of_stmt s1) in
+      let _  = curr_indent_level := !curr_indent_level - 1 in 
+      let else_str = String.concat "" (List.init (!curr_indent_level) (fun x->"  ")) ^ "else:\n" in 
+      let _  = curr_indent_level := !curr_indent_level + 1 in
+      let else_stmts = String.concat "" (List.map string_of_stmt s2) in
+      let _  = curr_indent_level := !curr_indent_level - 1 in
+      if_str ^ if_stmts ^ else_str ^ else_stmts
+  | IterLoop (id, s, e, b, st) ->
+      let loop_str = "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ ":\n" in
+      let _  = curr_indent_level := !curr_indent_level + 1 in
+      let loop_stmts = String.concat "" (List.map string_of_stmt st) in
+      let _  = curr_indent_level := !curr_indent_level - 1 in
+      loop_str ^ loop_stmts
+  | CondLoop (e, st) ->
+      let loop_str = "loop " ^ string_of_expr e ^ ":\n" in
+      let _  = curr_indent_level := !curr_indent_level + 1 in
+      let loop_stmts = String.concat "" (List.map string_of_stmt st) in
+      let _  = curr_indent_level := !curr_indent_level - 1 in
+      loop_str ^ loop_stmts
+  | Return ex -> "return " ^ string_of_expr ex ^ ".\n" in
+  String.concat "" (List.init (!curr_indent_level) (fun x->"  ")) ^ (string_of_stmt_raw s)
 
 let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id
 
@@ -132,10 +156,14 @@ let string_of_func_params (binds: bind list) =
       [] -> "none"
     | _ -> String.concat ", " (List.map string_of_bind binds)
   
-let string_of_func (fn: func) = "define " ^ fn.fname 
+let string_of_func (fn: func) =
+  let func_def = "define " ^ fn.fname 
   ^ " (" ^ string_of_func_params fn.params
-  ^ " -> " ^ string_of_func_rtype fn.rtype ^ "): {\n"
-  ^ String.concat "" (List.map string_of_stmt fn.body) ^ "}\n"
+  ^ " -> " ^ string_of_func_rtype fn.rtype ^ "):\n" in
+  let _  = curr_indent_level := !curr_indent_level + 1 in
+  let func_stmts = String.concat "" (List.map string_of_stmt fn.body) in
+  let _  = curr_indent_level := !curr_indent_level - 1 in
+  func_def ^ func_stmts
 
 let string_of_program (prog: program) =
   "Parsed program: \n\n" ^
