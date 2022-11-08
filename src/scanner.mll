@@ -29,7 +29,7 @@ rule token = parse
 | eol_ws as ws  { let indent_level = count_indents_with_n ws in
                   let indent_diff = indent_level - !curr_indent_level in
                   let _ = (curr_indent_level := indent_level) in
-                  if Int.abs indent_diff > 1 then raise (Failure excess_indent_err)
+                  if indent_diff > 1 then raise (Failure excess_indent_err)
                   else if indent_diff = 1 then [INDENT]
                   else if indent_diff < 0 then make_dedent_list (-indent_diff)
                   else token lexbuf }
