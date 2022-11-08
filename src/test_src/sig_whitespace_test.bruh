@@ -25,7 +25,7 @@ else:
 loop i in 1 to 10:
   loop j in 1 to 10:
     loop k in 1 to 10:
-      sum is sum + i + j + k.  # this comment only works bc there's 1 space after period
+      sum is sum + i + j + k.  # this comment only works bc there's 1 space after period, comments in general are broken
 number x is 5.
 
 # TODO comment after : don't work

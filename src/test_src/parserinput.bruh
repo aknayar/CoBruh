@@ -7,6 +7,7 @@ define foo (none -> number):
 define bar (number a, number b -> boolean):
   return a == b.
 
+
 define egg (boolean b, number n1, number n2 -> string):
   if not b:
     number a is 0.

@@ -17,6 +17,7 @@ let ascii = [' '-'!' '#'-'[' ']'-'~']
 
 let indent = "  "
 let eol = '\n'
+let el = '\n' indent* '\r'
 let eol_ws = '\n' indent*
 
 let exponent = ('E' | 'e') digit+
@@ -27,6 +28,7 @@ let string = '"' ascii* '"'
 
 rule token = parse
 [' ' '\t' '\r'] { token lexbuf } (* whitespace *)
+| el            { token lexbuf } (*empty line *)
 | eol_ws as ws  { let indent_level = count_indents_with_n ws in
                   let indent_diff = indent_level - !curr_indent_level in
                   let _ = (curr_indent_level := indent_level) in

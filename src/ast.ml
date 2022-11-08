@@ -124,7 +124,8 @@ let rec string_of_stmt s =
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ ".\n"
   | Reassign (id, e) -> id ^ " is " ^ string_of_expr e ^ ".\n"
   | Expr ex -> string_of_expr ex ^ ".\n"
-  | If (e, s1, s2) ->  let if_str = "if " ^ string_of_expr e ^ ":\n" in
+  | If (e, s1, s2) ->
+      let if_str = "if " ^ string_of_expr e ^ ":\n" in
       let _  = curr_indent_level := !curr_indent_level + 1 in
       let if_stmts = String.concat "" (List.map string_of_stmt s1) in
       let _  = curr_indent_level := !curr_indent_level - 1 in 
@@ -133,12 +134,14 @@ let rec string_of_stmt s =
       let else_stmts = String.concat "" (List.map string_of_stmt s2) in
       let _  = curr_indent_level := !curr_indent_level - 1 in
       if_str ^ if_stmts ^ else_str ^ else_stmts
-  | IterLoop (id, s, e, b, st) -> let loop_str = "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ ":\n" in
+  | IterLoop (id, s, e, b, st) ->
+      let loop_str = "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ ":\n" in
       let _  = curr_indent_level := !curr_indent_level + 1 in
       let loop_stmts = String.concat "" (List.map string_of_stmt st) in
       let _  = curr_indent_level := !curr_indent_level - 1 in
       loop_str ^ loop_stmts
-  | CondLoop (e, st) -> let loop_str = "loop " ^ string_of_expr e ^ ":\n" in
+  | CondLoop (e, st) ->
+      let loop_str = "loop " ^ string_of_expr e ^ ":\n" in
       let _  = curr_indent_level := !curr_indent_level + 1 in
       let loop_stmts = String.concat "" (List.map string_of_stmt st) in
       let _  = curr_indent_level := !curr_indent_level - 1 in
@@ -153,7 +156,8 @@ let string_of_func_params (binds: bind list) =
       [] -> "none"
     | _ -> String.concat ", " (List.map string_of_bind binds)
   
-let string_of_func (fn: func) = let func_def = "define " ^ fn.fname 
+let string_of_func (fn: func) =
+  let func_def = "define " ^ fn.fname 
   ^ " (" ^ string_of_func_params fn.params
   ^ " -> " ^ string_of_func_rtype fn.rtype ^ "):\n" in
   let _  = curr_indent_level := !curr_indent_level + 1 in
