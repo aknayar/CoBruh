@@ -1,7 +1,6 @@
 open Sast
 open Parser
 
-(* https://stackoverflow.com/questions/10899544/feed-ocamlyacc-parser-from-explicit-token-list *)
 let deflate token = 
   let q = Queue.create () in
   fun lexbuf -> 
