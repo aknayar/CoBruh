@@ -8,7 +8,7 @@ let deflate token =
       match token lexbuf with 
         | [   ] -> EOF 
         | [tok] -> tok
-        | hd::t -> List.iter (fun tok -> Queue.add tok q) t ; hd 
+        | hd::tl -> List.iter (fun tok -> Queue.add tok q) tl ; hd 
 
 let _ =
   let lexbuf = Lexing.from_channel (open_in "./test_src/semantinput.bruh") in
