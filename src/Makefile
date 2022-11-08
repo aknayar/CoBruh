@@ -10,7 +10,7 @@ allsemant: sast.ml semant.ml
 semanttest: allparser allsemant semanttest.ml
 	ocamlc -c semanttest.ml
 	ocamlc -o semanttest scanner.cmo parser.cmo semant.cmo semanttest.cmo
-	./semanttest
+	./semanttest < ./test_src/semantinput.bruh > ./test_src/semantoutput.txt
 
 .PHONY: allparser
 allparser: ast.ml scanner.mll parser.mly
@@ -25,7 +25,13 @@ allparser: ast.ml scanner.mll parser.mly
 parsertest: allparser parsertest.ml
 	ocamlc -c parsertest.ml
 	ocamlc -o parsertest ast.cmo scanner.cmo parser.cmo parsertest.cmo
-	./parsertest
+	./parsertest < ./test_src/parserinput.bruh > ./test_src/parseroutput.txt
+	
+.PHONY: whitespacetest
+whitespacetest: allparser parsertest.ml
+	ocamlc -c parsertest.ml
+	ocamlc -o parsertest ast.cmo scanner.cmo parser.cmo parsertest.cmo
+	./parsertest < ./test_src/sigwhitespaceinput.bruh > ./test_src/sigwhitespaceoutput.txt
 
 .PHONY: clean
 clean:
