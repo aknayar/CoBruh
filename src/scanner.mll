@@ -31,7 +31,7 @@ rule token = parse
                   let _ = (curr_indent_level := indent_level) in
                   if Int.abs indent_diff > 1 then raise (Failure excess_indent_err)
                   else if indent_diff = 1 then [INDENT]
-                  else if indent_diff = -1 then make_dedent_list (-indent_diff)
+                  else if indent_diff < 0 then make_dedent_list (-indent_diff)
                   else token lexbuf }
 | indent+       { raise (Failure unnecessary_indentation_err) }
 | '#'           { comment lexbuf } (* comment *)
