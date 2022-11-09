@@ -42,7 +42,7 @@ rule token = parse
 | ')' { [RPAREN] }
 | '[' { [LSQUARE] }
 | ']' { [RSQUARE] }
-| '.' (' ' | indent | '\t')* { [PERIOD] }
+| '.' { [PERIOD] }
 | ',' { [COMMA] }
 | ':' { [COLON] }
 | '|' { [PIPE] }
