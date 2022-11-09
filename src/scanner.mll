@@ -16,7 +16,7 @@ let digit = ['0'-'9']
 let ascii = [' '-'!' '#'-'[' ']'-'~']
 
 let indent = "  "
-let el = '\n' indent* '\r'
+let el = '\n' indent* ('\r' | '\n')
 let eol_ws = '\n' indent*
 
 let exponent = ('E' | 'e') digit+
