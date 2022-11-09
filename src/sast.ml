@@ -4,11 +4,13 @@ type sexpr = dtype * sx
 and sx = 
     SNumberLit of float
   | SBoolLit of bool
-  | SStringLit of string
   | SCharLit of char
+  | SStringLit of string
+  | SListList of sexpr list
   | SId of string
   | SBinop of sexpr * bop * sexpr
   | SUnop of uop * sexpr
+  | SElem of expr * expr
   | SCall of string * sexpr list
 
 type sstmt = 
