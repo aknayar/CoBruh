@@ -16,7 +16,7 @@ let digit = ['0'-'9']
 let ascii = [' '-'!' '#'-'[' ']'-'~']
 
 let indent = "  "
-let el = '\n' indent* ('\r' | '\n')
+let empty_line = '\n' (indent* ("\r\n" | '\n'))+
 let eol_ws = '\n' indent*
 
 let exponent = ('E' | 'e') digit+
@@ -27,15 +27,15 @@ let string = '"' ascii* '"'
 
 rule token = parse
   [' ' '\t' '\r'] { token lexbuf } (* whitespace *)
-| el            { token lexbuf } (*empty line *)
-| eol_ws as ws  { let indent_level = count_indents_with_n ws in
-                  let indent_diff = indent_level - !curr_indent_level in
-                  let _ = (curr_indent_level := indent_level) in
-                  if indent_diff > 1 then raise (Failure excess_indent_err)
-                  else if indent_diff = 1 then [INDENT]
-                  else if indent_diff < 0 then make_dedent_list (-indent_diff)
-                  else token lexbuf }
-| "/*"          { comment lexbuf } (* comment *)
+| empty_line      { token lexbuf } 
+| eol_ws as ws    { let indent_level = count_indents_with_n ws in
+                    let indent_diff = indent_level - !curr_indent_level in
+                    let _ = (curr_indent_level := indent_level) in
+                    if indent_diff > 1 then raise (Failure excess_indent_err)
+                    else if indent_diff = 1 then [INDENT]
+                    else if indent_diff < 0 then make_dedent_list (-indent_diff)
+                    else token lexbuf }
+| "/*"            { comment lexbuf } (* comment *)
 
 (* Symbols *)
 | '(' { [LPAREN] }
