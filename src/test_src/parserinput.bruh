@@ -11,7 +11,7 @@ define bar (number a, number b -> boolean):
 define egg (boolean b, number n1, number n2 -> string):
   if not b: # what
     number a is 0.
-    loop not b:
+    loop not b:     # comment should work
       a is a + n1 + n2.
     return "b is false".
   
