@@ -1,17 +1,17 @@
 number x is 1 + 2.
 
 define foo (none -> number):
-  number y is 10. # test
-  return y.  # test
+  number y is 10. /* test */
+  return y.  /* test */
 
 define bar (number a, number b -> boolean):
   return a == b.     
 
 
 define egg (boolean b, number n1, number n2 -> string):
-  if not b: # what
+  if not b: /* what */
     number a is 0.
-    loop not b:     # comment should work
+    loop not b:     /* comment should work */
       a is a + n1 + n2.
     return "b is false".
   
