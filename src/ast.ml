@@ -32,14 +32,14 @@ type uop =
 type expr = 
     NumberLit of float 
   | BoolLit of bool 
-  | StringLit of string 
   | CharLit of char 
+  | StringLit of string 
   | ListLit of expr list 
   | Id of string 
   | Binop of expr * bop * expr
   | Unop of uop * expr
+  | Elem of expr * expr
   | Call of string * expr list
-  | Elem of string * expr
   
 type stmt = 
     Expr of expr
@@ -116,7 +116,7 @@ let rec string_of_expr = function
   | Binop (e1, op, e2) -> string_of_expr e1 ^ " " ^ string_of_bop op ^ " " ^ string_of_expr e2
   | Unop (op, e) -> string_of_uop op ^ " " ^ string_of_expr e
   | Call (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
-  | Elem (l, e) -> l ^ "[" ^ string_of_expr e ^ "]"
+  | Elem (e1, e2) -> string_of_expr e1 ^ "[" ^ string_of_expr e2 ^ "]"
 
 
 let rec string_of_stmt s = 

@@ -88,8 +88,8 @@ expr:
   | expr OR expr                   { Binop ($1, Or, $3) }
   | NOT expr                       { Unop (Not, $2) }
   | LPAREN expr RPAREN             { $2 }
+  | expr LSQUARE expr RSQUARE      { Elem ($1, $3) }
   | ID LPAREN expr_list_opt RPAREN { Call ($1, $3) }
-  | ID LSQUARE expr RSQUARE        { Elem ($1, $3) }
 
 expr_list_opt:
     /* nothing */ { [] }
