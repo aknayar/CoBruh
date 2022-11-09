@@ -16,8 +16,7 @@ let digit = ['0'-'9']
 let ascii = [' '-'!' '#'-'[' ']'-'~']
 
 let indent = "  "
-let eol = '\n'
-let el = '\n' indent* '\r'
+let el = '\n' indent* ('\r' | '\n')
 let eol_ws = '\n' indent*
 
 let exponent = ('E' | 'e') digit+
@@ -27,7 +26,7 @@ let character = ''' ascii '''
 let string = '"' ascii* '"'
 
 rule token = parse
-[' ' '\t' '\r'] { token lexbuf } (* whitespace *)
+  [' ' '\t' '\r'] { token lexbuf } (* whitespace *)
 | el            { token lexbuf } (*empty line *)
 | eol_ws as ws  { let indent_level = count_indents_with_n ws in
                   let indent_diff = indent_level - !curr_indent_level in
@@ -36,8 +35,7 @@ rule token = parse
                   else if indent_diff = 1 then [INDENT]
                   else if indent_diff < 0 then make_dedent_list (-indent_diff)
                   else token lexbuf }
-| indent+       { raise (Failure unnecessary_indentation_err) }
-| indent* '#'   { comment lexbuf } (* comment *) (* TODO doesn't work after colons *)
+| "/*"          { comment lexbuf } (* comment *)
 
 (* Symbols *)
 | '(' { [LPAREN] }
@@ -105,5 +103,5 @@ rule token = parse
 | _           { raise (Failure(illegal_char_err)) }
 
 and comment = parse
-  ('\n' | eof) { token lexbuf } (* comment ends at newline *)
-| _            { comment lexbuf }
+  "*/" { token lexbuf } (* comment ends at newline *)
+| _    { comment lexbuf }

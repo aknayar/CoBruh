@@ -25,19 +25,14 @@ else:
 loop i in 1 to 10:
   loop j in 1 to 10:
     loop k in 1 to 10:
-      sum is sum + i + j + k.  # this comment only works bc there's 1 space after period, comments in general are broken
+      sum is sum + i + j + k.
 number x is 5.
 
-# TODO comment after : don't work
+/* EVERYTHING ABOVE SHOULD BE CORRECT */
 
-# EVERYTHING ABOVE SHOULD BE CORRECT
+/* uncomment next line to generate parser error */
+/*  number y is 10.  
 
-# uncomment next line to generate parser error
-#  number y is 10.
-
-# uncomment next line to generate unnecessary_indentation_err
-#number z is 10.  
-
-# uncomment next 2 lines to generate excess_indent_err
-#loop t in 1 to 10:
-#    number a is t.
+/* uncomment next 2 lines to generate excess_indent_err */
+/*loop t in 1 to 10: */
+/*    number a is t. */
