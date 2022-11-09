@@ -29,6 +29,7 @@ let string = '"' ascii* '"'
 rule token = parse
 [' ' '\t' '\r'] { token lexbuf } (* whitespace *)
 | el            { token lexbuf } (*empty line *)
+| indent+       { token lexbuf }
 | eol_ws as ws  { let indent_level = count_indents_with_n ws in
                   let indent_diff = indent_level - !curr_indent_level in
                   let _ = (curr_indent_level := indent_level) in
@@ -36,15 +37,14 @@ rule token = parse
                   else if indent_diff = 1 then [INDENT]
                   else if indent_diff < 0 then make_dedent_list (-indent_diff)
                   else token lexbuf }
-| indent+       { raise (Failure unnecessary_indentation_err) }
-| indent* '#'   { comment lexbuf } (* comment *) (* TODO doesn't work after colons *)
+| '#'           { comment lexbuf } (* comment *) (* TODO doesn't work after colons *)
 
 (* Symbols *)
 | '(' { [LPAREN] }
 | ')' { [RPAREN] }
 | '[' { [LSQUARE] }
 | ']' { [RSQUARE] }
-| '.' { [PERIOD] }
+| '.' (' ' | indent | '\t')* { [PERIOD] }
 | ',' { [COMMA] }
 | ':' { [COLON] }
 | '|' { [PIPE] }
@@ -105,5 +105,5 @@ rule token = parse
 | _           { raise (Failure(illegal_char_err)) }
 
 and comment = parse
-  ('\n' | eof) { token lexbuf } (* comment ends at newline *)
+  ('\r' | eof) { token lexbuf } (* comment ends at newline *)
 | _            { comment lexbuf }

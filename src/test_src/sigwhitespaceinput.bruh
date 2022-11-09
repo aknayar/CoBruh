@@ -35,9 +35,6 @@ number x is 5.
 # uncomment next line to generate parser error
 #  number y is 10.
 
-# uncomment next line to generate unnecessary_indentation_err
-#number z is 10.  
-
 # uncomment next 2 lines to generate excess_indent_err
 #loop t in 1 to 10:
 #    number a is t.
