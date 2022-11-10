@@ -37,7 +37,7 @@ rule token = parse
                   else if indent_diff < 0 then make_dedent_list (-indent_diff)
                   else token lexbuf }
 | indent+       { raise (Failure unnecessary_indentation_err) } (* when the first line is indented *)
-| '#'           { comment lexbuf } (* comment *) (* TODO doesn't work after colons *)
+| indent* '#'   { comment lexbuf } (* comment *) (* TODO doesn't work after colons *)
 
 (* Symbols *)
 | '(' { [LPAREN] }

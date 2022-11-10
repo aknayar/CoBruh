@@ -1,12 +1,11 @@
-number x is 1 + 2.
+number x is 1 + 2. # blah #
 
-define foo (none -> number):
+define foo (none -> number):    # maybe? #
   number y is 10.
   return y.
 
 define bar (number a, number b -> boolean):
   return a == b.
-
 
 define egg (boolean b, number n1, number n2 -> string):
   if not b:
