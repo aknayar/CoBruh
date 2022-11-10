@@ -115,8 +115,8 @@ let rec string_of_expr = function
   | Id id -> id
   | Binop (e1, op, e2) -> string_of_expr e1 ^ " " ^ string_of_bop op ^ " " ^ string_of_expr e2
   | Unop (op, e) -> string_of_uop op ^ " " ^ string_of_expr e
+  | Elem (e, i) -> string_of_expr e ^ "[" ^ string_of_expr i ^ "]"
   | Call (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
-  | Elem (e1, e2) -> string_of_expr e1 ^ "[" ^ string_of_expr e2 ^ "]"
 
 
 let rec string_of_stmt s = 

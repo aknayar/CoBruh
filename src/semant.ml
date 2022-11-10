@@ -32,8 +32,13 @@ let check (prog: program): sprogram =
   in let rec check_expr tbs = function
       NumberLit n -> (Number, SNumberLit n)
     | BoolLit b -> (Bool, SBoolLit b)
-    | StringLit s -> (String, SStringLit s)
     | CharLit c -> (Char, SCharLit c)
+    | StringLit s -> (String, SStringLit s)
+    | ListLit l -> (
+        match l with
+            [] -> 
+          | head::tail -> 
+      )
     | Id id -> (find_id id (fst tbs), SId id)
     | Binop (e1, op, e2) -> let (type1, sexpr1) = check_expr tbs e1 in let (type2, sexpr2) = check_expr tbs e2 in
         let final_type = if type1 = type2 then (
@@ -51,6 +56,7 @@ let check (prog: program): sprogram =
             | Neg when expr_type = Number -> Number
             | _ -> raise (Failure invalid_unop_args_err)
         ) in (final_type, SUnop (op, (expr_type, s_expr)))
+    | Elem (e, i) -> 0
     | Call (id, e_list) -> if not (StringMap.mem id (snd tbs)) then raise (Failure missing_func_err)
         else let fn = StringMap.find id (snd tbs) in (
           match fn.rtype with
