@@ -1,8 +1,13 @@
 {
   open Parser
 
+  let is_first_line = ref true
   let curr_indent_level = ref 0
-  let rec count_indents_with_n ws = (String.length ws - 1) / 2 (* should be length of indent defined below *)
+  let rec count_indents_with_n ws = match String.split_on_char '\n' ws with 
+    | hd::tl -> (match tl with
+                    | [hd] -> String.length hd / 2 
+                    | _  -> 0)
+    | _ -> 0
   let rec make_dedent_list num_dedents = if num_dedents = 0 then [] else DEDENT::(make_dedent_list (num_dedents - 1))
 
   let unnecessary_indentation_err = "unnecessary indentation"
@@ -16,9 +21,8 @@ let digit = ['0'-'9']
 let ascii = [' '-'!' '#'-'[' ']'-'~']
 
 let indent = "  "
-let eol = '\n'
-let el = '\n' indent* '\r'
-let eol_ws = '\n' indent*
+let eol = indent* '\n'
+let eol_ws = eol indent*
 
 let exponent = ('E' | 'e') digit+
 let number = digit+ ('.' digit+)? exponent?
@@ -27,8 +31,7 @@ let character = ''' ascii '''
 let string = '"' ascii* '"'
 
 rule token = parse
-[' ' '\t' '\r'] { token lexbuf } (* whitespace *)
-| el            { token lexbuf } (*empty line *)
+[' ' '\t' '\r'] { let _ = is_first_line := false in token lexbuf } (* whitespace *)
 | eol_ws as ws  { let indent_level = count_indents_with_n ws in
                   let indent_diff = indent_level - !curr_indent_level in
                   let _ = (curr_indent_level := indent_level) in
@@ -36,7 +39,7 @@ rule token = parse
                   else if indent_diff = 1 then [INDENT]
                   else if indent_diff < 0 then make_dedent_list (-indent_diff)
                   else token lexbuf }
-| indent+       { raise (Failure unnecessary_indentation_err) } (* when the first line is indented *)
+| indent+       { if !is_first_line then raise (Failure unnecessary_indentation_err) else token lexbuf } (* when the first line is indented *)
 | indent* '#'   { comment lexbuf } (* comment *) (* TODO doesn't work after colons *)
 
 (* Symbols *)
