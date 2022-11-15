@@ -3,16 +3,17 @@
 
   let is_first_line = ref true
   let curr_indent_level = ref 0
-  let rec count_indents_with_n ws = match String.split_on_char '\n' ws with 
+  let rec count_spaces_with_n ws = match String.split_on_char '\n' ws with 
     | hd::tl -> (match tl with
-                    | [hd] -> String.length hd / 2 
-                    | _  -> 0)
+                  | [hd] -> String.length hd
+                  | _  -> 0)
     | _ -> 0
   let rec make_dedent_list num_dedents = if num_dedents = 0 then [] else DEDENT::(make_dedent_list (num_dedents - 1))
 
   let unnecessary_indentation_err = "unnecessary indentation"
   let excess_indent_err = "too many indentations"
   let illegal_char_err = "illegal character"
+  let extra_space_err = "extra space"
   let mismatched_quote_err = "mismatched quotation"
 }
 
@@ -21,8 +22,8 @@ let digit = ['0'-'9']
 let ascii = [' '-'!' '#'-'[' ']'-'~']
 
 let indent = "  "
-let eol = indent* '\n'
-let eol_ws = eol indent*
+let eol = ' '* '\n'
+let eol_ws = eol ' '*
 
 let exponent = ('E' | 'e') digit+
 let number = digit+ ('.' digit+)? exponent?
@@ -32,7 +33,9 @@ let string = '"' ascii* '"'
 
 rule token = parse
 [' ' '\t' '\r'] { let _ = is_first_line := false in token lexbuf } (* whitespace *)
-| eol_ws as ws  { let indent_level = count_indents_with_n ws in
+| eol_ws as ws  { let num_spaces = count_spaces_with_n ws in
+                  if num_spaces mod 2 = 1 then raise (Failure extra_space_err)
+                  else let indent_level = num_spaces / 2 in
                   let indent_diff = indent_level - !curr_indent_level in
                   let _ = (curr_indent_level := indent_level) in
                   if indent_diff > 1 then raise (Failure excess_indent_err)
