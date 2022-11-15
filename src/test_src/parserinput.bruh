@@ -5,7 +5,7 @@ define foo (none -> number):      # maybe? #
   return y.
 
 define bar (number a, number b -> boolean):    
-  return a == b.
+  return a == b.          
 
 define egg (boolean b, number n1, number n2 -> string): 
   if not b:
