@@ -32,8 +32,8 @@ type uop =
 type expr = 
     NumberLit of float 
   | BoolLit of bool 
-  | StringLit of string 
   | CharLit of char 
+  | StringLit of string 
   | ListLit of expr list 
   | Id of string 
   | Binop of expr * bop * expr
@@ -45,6 +45,9 @@ type stmt =
     Expr of expr
   | Assign of dtype * string * expr
   | InferAssign of string * expr
+  | Alloc of dtype * string * expr
+  | AllocAssign of dtype * string * expr * expr
+  | AllocInferAssign of string * expr * expr
   | If of expr * stmt list * stmt list
   | IterLoop of string * expr * expr * expr * stmt list
   | CondLoop of expr * stmt list
@@ -123,6 +126,9 @@ let rec string_of_stmt s =
   let string_of_stmt_raw = function
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ ".\n"
   | InferAssign (id, e) -> id ^ " is " ^ string_of_expr e ^ ".\n"
+  | Alloc (t, id, n) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^ "].\n"
+  | AllocAssign (t, id, n, l) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^ "] is " ^ string_of_expr l ^ ".\n"
+  | AllocInferAssign (id, n, l) -> id ^ "[" ^ string_of_expr n ^ "] is " ^ string_of_expr l ^ ".\n"
   | Expr ex -> string_of_expr ex ^ ".\n"
   | If (e, s1, s2) ->
       let if_str = "if " ^ string_of_expr e ^ ":\n" in

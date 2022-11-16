@@ -105,8 +105,11 @@ stmt_list:
 
 stmt:
     expr PERIOD                                                              { Expr $1 }
-  | dtype ID ASSIGN expr PERIOD                                              { Assign ($1, $2, $4) }
+  | dtype ID ASSIGN expr PERIOD                                              { Assign ($1, $2, $4) } 
   | ID ASSIGN expr PERIOD                                                    { InferAssign ($1, $3) }
+  | dtype LIST ID LSQUARE expr RSQUARE PERIOD                                { Alloc (List $1, $3, $5) }
+  | dtype LIST ID LSQUARE expr RSQUARE ASSIGN expr PERIOD                    { AllocAssign (List $1, $3, $5, $8) }
+  | ID LSQUARE expr RSQUARE ASSIGN expr PERIOD                               { AllocInferAssign ($1, $3, $6) }
   | IF expr COLON INDENT stmt_list DEDENT ELSE COLON INDENT stmt_list DEDENT { If ($2, $5, $10) }
   | LOOP ID IN expr TO expr loop_by COLON INDENT stmt_list DEDENT            { IterLoop ($2, $4, $6, $7, $10) }
   | LOOP expr COLON INDENT stmt_list DEDENT                                  { CondLoop ($2, $5) }
