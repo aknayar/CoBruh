@@ -70,7 +70,7 @@ expr:
   | BOOLLIT                        { BoolLit $1 }
   | CHARLIT                        { CharLit $1 }
   | STRINGLIT                      { StringLit $1 }
-  | LSQUARE expr_list_opt RSQUARE  { ListLit ($2) } 
+  | LSQUARE expr_list RSQUARE      { ListLit $2 } 
   | ID                             { Id $1 }
   | expr PLUS expr                 { Binop ($1, Plus, $3) }
   | expr MINUS expr                { Binop ($1, Minus, $3) }
@@ -106,7 +106,7 @@ stmt_list:
 stmt:
     expr PERIOD                                                              { Expr $1 }
   | dtype ID ASSIGN expr PERIOD                                              { Assign ($1, $2, $4) }
-  | ID ASSIGN expr PERIOD                                                    { Reassign ($1, $3) }
+  | ID ASSIGN expr PERIOD                                                    { InferAssign ($1, $3) }
   | IF expr COLON INDENT stmt_list DEDENT ELSE COLON INDENT stmt_list DEDENT { If ($2, $5, $10) }
   | LOOP ID IN expr TO expr loop_by COLON INDENT stmt_list DEDENT            { IterLoop ($2, $4, $6, $7, $10) }
   | LOOP expr COLON INDENT stmt_list DEDENT                                  { CondLoop ($2, $5) }

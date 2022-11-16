@@ -88,9 +88,6 @@ rule token = parse
 | "->"     { [GIVES] }
 | "return" { [RETURN] }
 
-(* Builtin Functions *)
-| "use" { [USE] }
-
 (* Data Types *)
 | "number"    { [NUMBER] }
 | "boolean"   { [BOOL] }

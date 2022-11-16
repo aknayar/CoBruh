@@ -44,7 +44,7 @@ type expr =
 type stmt = 
     Expr of expr
   | Assign of dtype * string * expr
-  | Reassign of string * expr
+  | InferAssign of string * expr
   | If of expr * stmt list * stmt list
   | IterLoop of string * expr * expr * expr * stmt list
   | CondLoop of expr * stmt list
@@ -122,7 +122,7 @@ let rec string_of_expr = function
 let rec string_of_stmt s = 
   let string_of_stmt_raw = function
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ ".\n"
-  | Reassign (id, e) -> id ^ " is " ^ string_of_expr e ^ ".\n"
+  | InferAssign (id, e) -> id ^ " is " ^ string_of_expr e ^ ".\n"
   | Expr ex -> string_of_expr ex ^ ".\n"
   | If (e, s1, s2) ->
       let if_str = "if " ^ string_of_expr e ^ ":\n" in
