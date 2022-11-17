@@ -93,7 +93,7 @@ rule token = parse
 | "boolean"   { [BOOL] }
 | "character" { [CHAR] }
 | "string"    { [STRING] }
-| "list"      { [LIST] }
+| "array"     { [ARRAY] }
 
 (* Literals *)
 | number as lex    { [NUMBERLIT (float_of_string lex)] }

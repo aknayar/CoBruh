@@ -3,7 +3,6 @@ type dtype =
   | Bool 
   | Char 
   | String 
-  | List of dtype
 
 type func_rtype =
     DType of dtype
@@ -34,20 +33,23 @@ type expr =
   | BoolLit of bool 
   | CharLit of char 
   | StringLit of string 
-  | ListLit of expr list 
   | Id of string 
   | Binop of expr * bop * expr
   | Unop of uop * expr
   | Call of string * expr list
   | Elem of string * expr
+
+type array_element =
+    ExprElem of expr
+  | ArrayElem of array_element list
   
 type stmt = 
     Expr of expr
   | Assign of dtype * string * expr
   | InferAssign of string * expr
-  | Alloc of dtype * string * expr
-  | AllocAssign of dtype * string * expr * expr
-  | AllocInferAssign of string * expr * expr
+  | Alloc of dtype * string * expr list
+  | AllocAssign of dtype * string * expr list * array_element list
+  | AllocInferAssign of string * expr list * array_element list
   | If of expr * stmt list * stmt list
   | IterLoop of string * expr * expr * expr * stmt list
   | CondLoop of expr * stmt list
@@ -83,7 +85,6 @@ let rec string_of_dtype = function
   | Bool -> "boolean"
   | Char -> "character"
   | String -> "string"
-  | List d -> string_of_dtype d ^ " list"
 
 let string_of_func_rtype = function
     DType typ -> string_of_dtype typ
@@ -114,21 +115,30 @@ let rec string_of_expr = function
   | BoolLit b -> if b then "true" else "false"
   | CharLit c -> "'" ^ Char.escaped c ^ "'"
   | StringLit s -> "\"" ^ s ^ "\""
-  | ListLit el -> "[" ^ String.concat ", " (List.map string_of_expr el) ^ "]"
   | Id id -> id
   | Binop (e1, op, e2) -> string_of_expr e1 ^ " " ^ string_of_bop op ^ " " ^ string_of_expr e2
   | Unop (op, e) -> string_of_uop op ^ " " ^ string_of_expr e
   | Call (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | Elem (l, e) -> l ^ "[" ^ string_of_expr e ^ "]"
 
+let string_of_array_dimensions dimens = 
+  let array_dimensions_string = String.concat "][" (List.map string_of_expr dimens) in
+  "[" ^ array_dimensions_string ^ "]"
+
+let rec string_of_array array = "[" ^ String.concat ", " (List.map (
+  fun element -> match element with 
+      ExprElem e -> string_of_expr e
+    | ArrayElem a -> string_of_array a
+  ) array
+) ^ "]"
 
 let rec string_of_stmt s = 
   let string_of_stmt_raw = function
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ ".\n"
   | InferAssign (id, e) -> id ^ " is " ^ string_of_expr e ^ ".\n"
-  | Alloc (t, id, n) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^ "].\n"
-  | AllocAssign (t, id, n, l) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^ "] is " ^ string_of_expr l ^ ".\n"
-  | AllocInferAssign (id, n, l) -> id ^ "[" ^ string_of_expr n ^ "] is " ^ string_of_expr l ^ ".\n"
+  | Alloc (t, id, dimens) -> string_of_dtype t ^ " " ^ id ^ string_of_array_dimensions dimens ^".\n"
+  | AllocAssign (t, id, dimens, a) -> string_of_dtype t ^ " " ^ id ^ string_of_array_dimensions dimens ^ " is " ^ string_of_array a ^ ".\n"
+  | AllocInferAssign (id, dimens, a) -> id ^ string_of_array_dimensions dimens ^ " is " ^ string_of_array a ^ ".\n"
   | Expr ex -> string_of_expr ex ^ ".\n"
   | If (e, s1, s2) ->
       let if_str = "if " ^ string_of_expr e ^ ":\n" in
@@ -153,7 +163,7 @@ let rec string_of_stmt s =
       let _  = curr_indent_level := !curr_indent_level - 1 in
       loop_str ^ loop_stmts
   | Return ex -> "return " ^ string_of_expr ex ^ ".\n" in
-  String.concat "" (List.init (!curr_indent_level) (fun x->"  ")) ^ (string_of_stmt_raw s)
+  String.concat "" (List.init (!curr_indent_level) (fun x -> "  ")) ^ (string_of_stmt_raw s)
 
 let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id
 
