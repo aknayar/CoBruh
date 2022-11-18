@@ -1,17 +1,17 @@
-number x is 1 + 2. # blah #
+number x is 1 + 2. # blah 
 
-define foo (none -> number):      # maybe? #
-  number y is 10.
+define foo (none -> number):      # maybe? 
+  number y is 10.       
   return y.
 
 define bar (number a, number b -> boolean):    
   return a == b.          
-
+           
 define egg (boolean b, number n1, number n2 -> string): 
   if not b:
     number a is 0.
-    loop not b:    # this #
-      a is a + n1 + n2. # please? #
+    loop not b:    # this 
+      a is a + n1 + n2. # please? 
     return "b is false".
   else:
     if -n1 > -n2:
@@ -47,3 +47,4 @@ f[1][1] is [[5]].
 e is f.
 
 number g[5] is a.
+
