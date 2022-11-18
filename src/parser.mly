@@ -120,7 +120,7 @@ array_dimensions:
 
 array_assign:
     LSQUARE array_element_list RSQUARE { ArrayLit $2 }
-  | ID                                { ArrayId $1 }
+  | ID                                 { ArrayId $1 }
 
 array_element:
     expr                               { ExprElem $1 }
