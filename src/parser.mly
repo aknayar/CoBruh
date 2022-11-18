@@ -103,20 +103,24 @@ stmt_list:
   | stmt stmt_list { $1::$2 }
 
 stmt:
-    expr PERIOD                                                                { Expr $1 }
-  | dtype ID ASSIGN expr PERIOD                                                { Assign ($1, $2, $4) } 
-  | ID ASSIGN expr PERIOD                                                      { InferAssign ($1, $3) }
-  | dtype ID array_dimensions PERIOD                                           { Alloc ($1, $2, $3) }
-  | dtype ID array_dimensions ASSIGN LSQUARE array_element_list RSQUARE PERIOD { AllocAssign ($1, $2, $3, $6) }
-  | ID array_dimensions ASSIGN LSQUARE array_element_list RSQUARE PERIOD       { AllocInferAssign ($1, $2, $5) }
-  | IF expr COLON INDENT stmt_list DEDENT ELSE COLON INDENT stmt_list DEDENT   { If ($2, $5, $10) }
-  | LOOP ID IN expr TO expr loop_by COLON INDENT stmt_list DEDENT              { IterLoop ($2, $4, $6, $7, $10) }
-  | LOOP expr COLON INDENT stmt_list DEDENT                                    { CondLoop ($2, $5) }
-  | RETURN expr PERIOD                                                         { Return $2 }
+    expr PERIOD                                                              { Expr $1 }
+  | dtype ID ASSIGN expr PERIOD                                              { Assign ($1, $2, $4) } 
+  | ID ASSIGN expr PERIOD                                                    { InferAssign ($1, $3) }
+  | dtype ID array_dimensions PERIOD                                         { Alloc ($1, $2, $3) }
+  | dtype ID array_dimensions ASSIGN array_assign PERIOD                     { AllocAssign ($1, $2, $3, $5) }
+  | ID array_dimensions ASSIGN array_assign PERIOD                           { AllocInferAssign ($1, $2, $4) }
+  | IF expr COLON INDENT stmt_list DEDENT ELSE COLON INDENT stmt_list DEDENT { If ($2, $5, $10) }
+  | LOOP ID IN expr TO expr loop_by COLON INDENT stmt_list DEDENT            { IterLoop ($2, $4, $6, $7, $10) }
+  | LOOP expr COLON INDENT stmt_list DEDENT                                  { CondLoop ($2, $5) }
+  | RETURN expr PERIOD                                                       { Return $2 }
 
 array_dimensions:
     LSQUARE expr RSQUARE                  { [$2] }
   | LSQUARE expr RSQUARE array_dimensions { $2::$4 }
+
+array_assign:
+    LSQUARE array_element_list RSQUARE { ArrayLit $2 }
+  | ID                                { ArrayId $1 }
 
 array_element:
     expr                               { ExprElem $1 }

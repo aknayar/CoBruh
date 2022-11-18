@@ -45,3 +45,5 @@ number e[5][4].
 f[1][1] is [[5]].
 
 e is f.
+
+number g[5] is a.

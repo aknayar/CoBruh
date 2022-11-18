@@ -42,14 +42,18 @@ type expr =
 type array_element =
     ExprElem of expr
   | ArrayElem of array_element list
+
+type array_assign = 
+    ArrayLit of array_element list
+  | ArrayId of string
   
 type stmt = 
     Expr of expr
   | Assign of dtype * string * expr
   | InferAssign of string * expr
   | Alloc of dtype * string * expr list
-  | AllocAssign of dtype * string * expr list * array_element list
-  | AllocInferAssign of string * expr list * array_element list
+  | AllocAssign of dtype * string * expr list * array_assign
+  | AllocInferAssign of string * expr list * array_assign
   | If of expr * stmt list * stmt list
   | IterLoop of string * expr * expr * expr * stmt list
   | CondLoop of expr * stmt list
@@ -125,20 +129,23 @@ let string_of_array_dimensions dimens =
   let array_dimensions_string = String.concat "][" (List.map string_of_expr dimens) in
   "[" ^ array_dimensions_string ^ "]"
 
-let rec string_of_array array = "[" ^ String.concat ", " (List.map (
-  fun element -> match element with 
-      ExprElem e -> string_of_expr e
-    | ArrayElem a -> string_of_array a
-  ) array
-) ^ "]"
+let string_of_array_assign = function
+    ArrayLit a -> 
+      let rec string_of_array array = "[" ^ String.concat ", " (List.map (
+        fun element -> match element with 
+            ExprElem e -> string_of_expr e
+          | ArrayElem a -> string_of_array a
+        ) array
+      ) ^ "]" in string_of_array a
+  | ArrayId id -> id
 
 let rec string_of_stmt s = 
   let string_of_stmt_raw = function
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ ".\n"
   | InferAssign (id, e) -> id ^ " is " ^ string_of_expr e ^ ".\n"
   | Alloc (t, id, dimens) -> string_of_dtype t ^ " " ^ id ^ string_of_array_dimensions dimens ^".\n"
-  | AllocAssign (t, id, dimens, a) -> string_of_dtype t ^ " " ^ id ^ string_of_array_dimensions dimens ^ " is " ^ string_of_array a ^ ".\n"
-  | AllocInferAssign (id, dimens, a) -> id ^ string_of_array_dimensions dimens ^ " is " ^ string_of_array a ^ ".\n"
+  | AllocAssign (t, id, dimens, a) -> string_of_dtype t ^ " " ^ id ^ string_of_array_dimensions dimens ^ " is " ^ string_of_array_assign a ^ ".\n"
+  | AllocInferAssign (id, dimens, a) -> id ^ string_of_array_dimensions dimens ^ " is " ^ string_of_array_assign a ^ ".\n"
   | Expr ex -> string_of_expr ex ^ ".\n"
   | If (e, s1, s2) ->
       let if_str = "if " ^ string_of_expr e ^ ":\n" in
