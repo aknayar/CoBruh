@@ -82,7 +82,6 @@ rule token = parse
 | "by"   { [BY] }
 
 (* Functions *)
-| "call"   { [CALL] }
 | "define" { [DEFINE] }
 | "none"   { [NONE] }
 | "->"     { [GIVES] }
@@ -93,7 +92,6 @@ rule token = parse
 | "boolean"   { [BOOL] }
 | "character" { [CHAR] }
 | "string"    { [STRING] }
-| "array"     { [ARRAY] }
 
 (* Literals *)
 | number as lex    { [NUMBERLIT (float_of_string lex)] }
