@@ -23,7 +23,67 @@ let missing_return_err = "missing return statement"
 let unimplemented_err = "unimplemented"
 
 let check (prog: program): sprogram =
-  let name_exists tables name =
+  (* all_funcs contains all function definitions *)
+  let all_funcs = Hashtbl.create 10 in
+  (* all_scope is a list of hashtables, with each table representing a scope *)
+  let all_scopes = ref [Hashtbl.create 10] in
+
+  let get_function func_name = 
+    if not (Hashtbl.mem all_funcs func_name) then raise (Failure missing_func_err)
+    else Hashtbl.find all_funcs func_name 
+  in
+  let get_current_scope () (* for implicit decls *) = List.hd !all_scopes in
+  let find_scope_with_name_opt name (* for explicit decls *) = List.find_opt (fun scope -> Hashtbl.mem scope name) !all_scopes in
+  let find_scope_with_name name = 
+    match find_scope_with_name_opt name with 
+        Some scope -> scope
+      | None -> raise (Failure missing_id_err)
+  in
+  let find_variable_with_name name (* for finding Ids *) = Hashtbl.find (find_scope_with_name name) name in
+  
+  let rec check_expr = function
+      NumberLit n -> (Number, SNumberLit n)
+    | BoolLit b -> (Bool, SBoolLit b)
+    | CharLit c -> (Char, SCharLit c)
+    | StringLit s -> (String, SStringLit s)
+    | Id id -> find_variable_with_name id
+    | Binop (e1, op, e2) -> 
+        let sexpr1 = check_expr e1 in let (dtype1, expr1) = sexpr1 in
+        let sexpr2 = check_expr e2 in let (dtype2, expr2) = sexpr2 in
+        if dtype1 != dtype2 then raise (Failure mismatched_bop_args_err)
+        else let res_type = (
+          match op with 
+              (Plus | Minus | Times | IntDiv | Div | Mod) when dtype1 = Number -> Number
+            | (Eq | Neq | Less | Leq | Greater | Geq) when dtype1 = Number -> Bool
+            | (And | Or) when dtype1 = Bool -> Bool
+            | _ -> raise (Failure invalid_bop_args_err)
+        ) in
+        (res_type, SBinop (sexpr1, op, sexpr2))
+    | Unop (op, e) ->
+        let sexpr' = check_expr e in let (dtype', expr') = sexpr' in
+        let res_type = (
+          match op with
+              Not when dtype' = Bool -> Bool
+            | Neg when dtype' = Number -> Number
+            | _ -> raise (Failure invalid_unop_args_err)
+        ) in
+        (res_type, SUnop (op, sexpr'))
+    | Call (id, passed_params) -> 
+        let fn = get_function id in (
+          match fn.rtype with
+              None -> raise (Failure none_return_err)
+            | DType res_type -> 
+                if List.length passed_params != List.length fn.params then raise (Failure mismatched_func_args_err)
+                else if List.exists2 (
+                  fun passed_param fn_param -> let (passed_dtype, _) = check_expr passed_param 
+                  in passed_dtype != fst fn_param
+                ) passed_params fn.params then raise (Failure mismatched_func_args_err)
+                else (res_type, SCall (id, (List.map check_expr passed_params)))
+        )
+    | Elem (id, ind) -> raise (Failure unimplemented_err)
+
+
+  let name_exists tables name = 
     let (ids, funcs) = tables in (StringMap.mem name ids || StringMap.mem name funcs)
   in let rec find_id name ids_table = match ids_table with
       [] -> raise (Failure missing_id_err)
