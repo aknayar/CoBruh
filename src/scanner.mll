@@ -12,7 +12,7 @@
 
   let unnecessary_indentation_err = "unnecessary indentation"
   let excess_indent_err = "too many indentations"
-  let illegal_char_err = "illegal character"
+  let illegal_character_err = "illegal character"
   let extra_space_err = "extra space"
   let mismatched_quote_err = "mismatched quotation"
 }
@@ -82,21 +82,16 @@ rule token = parse
 | "by"   { [BY] }
 
 (* Functions *)
-| "call"   { [CALL] }
 | "define" { [DEFINE] }
 | "none"   { [NONE] }
 | "->"     { [GIVES] }
 | "return" { [RETURN] }
-
-(* Builtin Functions *)
-| "use" { [USE] }
 
 (* Data Types *)
 | "number"    { [NUMBER] }
 | "boolean"   { [BOOL] }
 | "character" { [CHAR] }
 | "string"    { [STRING] }
-| "list"      { [LIST] }
 
 (* Literals *)
 | number as lex    { [NUMBERLIT (float_of_string lex)] }
@@ -108,7 +103,7 @@ rule token = parse
 
 | eof         { [EOF] }
 | ('"' | ''') { raise (Failure(mismatched_quote_err)) }
-| _           { raise (Failure(illegal_char_err)) }
+| _           { raise (Failure(illegal_character_err)) }
 
 and comment = parse
   '#' { token lexbuf }

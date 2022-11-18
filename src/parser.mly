@@ -6,8 +6,8 @@
 %token LPAREN RPAREN LSQUARE RSQUARE PERIOD COMMA COLON PIPE 
 %token ASSIGN PLUS MINUS TIMES INTDIV DIV MOD EQ NEQ LT LEQ GT GEQ AND OR NOT
 %token IF ELSE LOOP IN TO BY
-%token CALL DEFINE NONE GIVES RETURN
-%token NUMBER BOOL CHAR STRING LIST 
+%token DEFINE NONE GIVES RETURN
+%token NUMBER BOOL CHAR STRING 
 %token USE
 %token TAB
 %token EOF
@@ -70,7 +70,6 @@ expr:
   | BOOLLIT                        { BoolLit $1 }
   | CHARLIT                        { CharLit $1 }
   | STRINGLIT                      { StringLit $1 }
-  | LSQUARE expr_list_opt RSQUARE  { ListLit ($2) } 
   | ID                             { Id $1 }
   | expr PLUS expr                 { Binop ($1, Plus, $3) }
   | expr MINUS expr                { Binop ($1, Minus, $3) }
@@ -105,12 +104,31 @@ stmt_list:
 
 stmt:
     expr PERIOD                                                              { Expr $1 }
-  | dtype ID ASSIGN expr PERIOD                                              { Assign ($1, $2, $4) }
-  | ID ASSIGN expr PERIOD                                                    { Reassign ($1, $3) }
+  | dtype ID ASSIGN expr PERIOD                                              { Assign ($1, $2, $4) } 
+  | ID ASSIGN expr PERIOD                                                    { InferAssign ($1, $3) }
+  | dtype ID array_dimensions PERIOD                                         { Alloc ($1, $2, $3) }
+  | dtype ID array_dimensions ASSIGN array_assign PERIOD                     { AllocAssign ($1, $2, $3, $5) }
+  | ID array_dimensions ASSIGN array_assign PERIOD                           { AllocInferAssign ($1, $2, $4) }
   | IF expr COLON INDENT stmt_list DEDENT ELSE COLON INDENT stmt_list DEDENT { If ($2, $5, $10) }
   | LOOP ID IN expr TO expr loop_by COLON INDENT stmt_list DEDENT            { IterLoop ($2, $4, $6, $7, $10) }
   | LOOP expr COLON INDENT stmt_list DEDENT                                  { CondLoop ($2, $5) }
   | RETURN expr PERIOD                                                       { Return $2 }
+
+array_dimensions:
+    LSQUARE expr RSQUARE                  { [$2] }
+  | LSQUARE expr RSQUARE array_dimensions { $2::$4 }
+
+array_assign:
+    LSQUARE array_element_list RSQUARE { ArrayLit $2 }
+  | ID                                 { ArrayId $1 }
+
+array_element:
+    expr                               { ExprElem $1 }
+  | LSQUARE array_element_list RSQUARE { ArrayElem $2 }
+
+array_element_list:
+    array_element                          { [$1] }
+  | array_element COMMA array_element_list { $1::$3 }
 
 loop_by:
     /* nothing */ { NumberLit 1. }
@@ -121,7 +139,6 @@ dtype:
   | BOOL       { Bool }
   | CHAR       { Char }
   | STRING     { String }
-  | dtype LIST { List $1 }
 
 /* allows functions to return none */
 func_rtype:
