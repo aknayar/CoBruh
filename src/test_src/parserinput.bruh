@@ -43,3 +43,5 @@ number d[4] is [1, 2, 3, 4].
 number e[5][4].
 
 f[1][1] is [[5]].
+
+e is f.
