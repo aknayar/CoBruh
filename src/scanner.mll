@@ -107,11 +107,11 @@ rule token = parse
 | string as lex    { make_token_list (STRINGLIT (String.sub lex 1 (String.length lex - 2))) }
 | id as lex        { make_token_list (ID lex) }
 
-| eof         { dedent_to_zero () @ [EOF] }
+| eof         { if not !is_start_of_line then EOL::(dedent_to_zero () @ [EOF]) else dedent_to_zero () @ [EOF] }
 | ('"' | ''') { raise (Failure(mismatched_quote_err)) }
 | _           { raise (Failure(illegal_character_err)) }
 
 and comment = parse
   '\n' { let was_start = !is_start_of_line in set_new_line (); if not was_start then EOL::(token lexbuf) else token lexbuf }
-| eof  { dedent_to_zero () @ [EOF] }
+| eof  { if not !is_start_of_line then EOL::(dedent_to_zero () @ [EOF]) else dedent_to_zero () @ [EOF] }
 | _    { comment lexbuf }

@@ -46,5 +46,4 @@ f[1][1] is [[5]]
 
 e is f
 
-number g[5] is a # test here
-# test here
+number g[5] is a
