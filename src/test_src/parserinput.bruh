@@ -49,3 +49,8 @@ e is f
 # number g[5] is a
 
 num1 is num1 % 5 % 6
+
+if this:
+  that()
+
+number something is 100
