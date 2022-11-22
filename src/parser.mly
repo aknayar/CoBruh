@@ -76,6 +76,7 @@ expr:
   | expr TIMES expr                { Binop ($1, Times, $3) }
   | expr INTDIV expr               { Binop ($1, IntDiv, $3) }
   | expr DIV expr                  { Binop ($1, Div, $3) }
+  | expr MOD expr                  { Binop ($1, Mod, $3) }
   | MINUS expr %prec UMINUS        { Unop (Neg, $2) }
   | expr EQ expr                   { Binop ($1, Eq, $3) }
   | expr NEQ expr                  { Binop ($1, Neq, $3) }
@@ -106,29 +107,14 @@ stmt:
     expr EOL                                                                         { Expr $1 }
   | dtype ID ASSIGN expr EOL                                                         { Assign ($1, $2, $4) } 
   | ID ASSIGN expr EOL                                                               { InferAssign ($1, $3) }
-  | dtype ID array_dimensions EOL                                                    { Alloc ($1, $2, $3) }
-  | dtype ID array_dimensions ASSIGN array_assign EOL                                { AllocAssign ($1, $2, $3, $5) }
-  | ID array_dimensions ASSIGN array_assign EOL                                      { AllocInferAssign ($1, $2, $4) }
-  | IF expr COLON EOL INDENT stmt_list DEDENT ELSE COLON EOL INDENT stmt_list DEDENT { If ($2, $6, $12) }
+  | dtype ID LSQUARE expr RSQUARE EOL                                                { Alloc ($1, $2, $4) }
+  | dtype ID LSQUARE expr RSQUARE ASSIGN LSQUARE expr_list RSQUARE EOL               { AllocAssign ($1, $2, $4, $8) }
+  | ID LSQUARE expr RSQUARE ASSIGN LSQUARE expr_list RSQUARE EOL                     { AllocInferAssign ($1, $3, $7) }
+  | IF expr COLON EOL INDENT stmt_list DEDENT                                        { If ($2, $6) }
+  | IF expr COLON EOL INDENT stmt_list DEDENT ELSE COLON EOL INDENT stmt_list DEDENT { IfElse ($2, $6, $12) }
   | LOOP ID IN expr TO expr loop_by COLON EOL INDENT stmt_list DEDENT                { IterLoop ($2, $4, $6, $7, $11) }
   | LOOP expr COLON EOL INDENT stmt_list DEDENT                                      { CondLoop ($2, $6) }
   | RETURN expr EOL                                                                  { Return $2 }
-
-array_dimensions:
-    LSQUARE expr RSQUARE                  { [$2] }
-  | LSQUARE expr RSQUARE array_dimensions { $2::$4 }
-
-array_assign:
-    LSQUARE array_element_list RSQUARE { ArrayLit $2 }
-  | ID                                 { ArrayId $1 }
-
-array_element:
-    expr                               { ExprElem $1 }
-  | LSQUARE array_element_list RSQUARE { ArrayElem $2 }
-
-array_element_list:
-    array_element                          { [$1] }
-  | array_element COMMA array_element_list { $1::$3 }
 
 loop_by:
     /* nothing */ { NumberLit 1. }
