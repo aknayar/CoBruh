@@ -38,7 +38,7 @@ b[6] is [1, 2, 3, 4, 5, 6]
 
 number c[3]
 
-number d[4] is [1, 2, 3, 4]
+number d[4] is [1, -2, 3, |-4|]
 
 # number e[5][4]
 
