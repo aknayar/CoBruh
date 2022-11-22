@@ -49,15 +49,14 @@ let string = '"' ascii* '"'
 rule token = parse
 ['\t' '\r'] { token lexbuf } (* whitespace *)
 | ' '       { if !is_start_of_line then new_spacing := !new_spacing + 1 else (); token lexbuf }
-| '\n'      { set_new_line (); token lexbuf } 
-| '#'       { is_start_of_line := false; comment lexbuf } (* comment *)
+| '\n'      { let was_start = !is_start_of_line in set_new_line (); if not was_start then EOL::(token lexbuf) else token lexbuf } 
+| '#'       { comment lexbuf } (* comment *)
 
 (* Symbols *)
 | '(' { make_token_list LPAREN }
 | ')' { [RPAREN] }
 | '[' { [LSQUARE] }
 | ']' { [RSQUARE] }
-| '.' { [PERIOD] }
 | ',' { [COMMA] }
 | ':' { [COLON] }
 | '|' { make_token_list PIPE }
@@ -108,14 +107,11 @@ rule token = parse
 | string as lex    { make_token_list (STRINGLIT (String.sub lex 1 (String.length lex - 2))) }
 | id as lex        { make_token_list (ID lex) }
 
-| eof         { 
-                (* should close everything off, so dedent to zero scope *)
-                dedent_to_zero () @ [EOF] 
-              }
+| eof         { if not !is_start_of_line then EOL::(dedent_to_zero () @ [EOF]) else dedent_to_zero () @ [EOF] }
 | ('"' | ''') { raise (Failure(mismatched_quote_err)) }
 | _           { raise (Failure(illegal_character_err)) }
 
 and comment = parse
-  '\n' { set_new_line (); token lexbuf }
-| eof  { dedent_to_zero () @ [EOF] }
+  '\n' { let was_start = !is_start_of_line in set_new_line (); if not was_start then EOL::(token lexbuf) else token lexbuf }
+| eof  { if not !is_start_of_line then EOL::(dedent_to_zero () @ [EOF]) else dedent_to_zero () @ [EOF] }
 | _    { comment lexbuf }
