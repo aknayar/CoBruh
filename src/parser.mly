@@ -76,6 +76,7 @@ expr:
   | expr TIMES expr                { Binop ($1, Times, $3) }
   | expr INTDIV expr               { Binop ($1, IntDiv, $3) }
   | expr DIV expr                  { Binop ($1, Div, $3) }
+  | expr MOD expr                  { Binop ($1, Mod, $3) }
   | MINUS expr %prec UMINUS        { Unop (Neg, $2) }
   | expr EQ expr                   { Binop ($1, Eq, $3) }
   | expr NEQ expr                  { Binop ($1, Neq, $3) }
