@@ -49,7 +49,7 @@ let string = '"' ascii* '"'
 rule token = parse
 ['\t' '\r'] { token lexbuf } (* whitespace *)
 | ' '       { if !is_start_of_line then new_spacing := !new_spacing + 1 else (); token lexbuf }
-| '\n'      { set_new_line (); token lexbuf } 
+| '\n'      { set_new_line (); EOL::(token lexbuf) } 
 | '#'       { is_start_of_line := false; comment lexbuf } (* comment *)
 
 (* Symbols *)
@@ -57,7 +57,6 @@ rule token = parse
 | ')' { [RPAREN] }
 | '[' { [LSQUARE] }
 | ']' { [RSQUARE] }
-| '.' { [PERIOD] }
 | ',' { [COMMA] }
 | ':' { [COLON] }
 | '|' { make_token_list PIPE }
@@ -108,14 +107,11 @@ rule token = parse
 | string as lex    { make_token_list (STRINGLIT (String.sub lex 1 (String.length lex - 2))) }
 | id as lex        { make_token_list (ID lex) }
 
-| eof         { 
-                (* should close everything off, so dedent to zero scope *)
-                dedent_to_zero () @ [EOF] 
-              }
+| eof         { dedent_to_zero () @ [EOF] }
 | ('"' | ''') { raise (Failure(mismatched_quote_err)) }
 | _           { raise (Failure(illegal_character_err)) }
 
 and comment = parse
-  '\n' { set_new_line (); token lexbuf }
+  '\n' { set_new_line (); EOL::(token lexbuf) }
 | eof  { dedent_to_zero () @ [EOF] }
 | _    { comment lexbuf }
