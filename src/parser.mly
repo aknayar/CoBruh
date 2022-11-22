@@ -55,13 +55,13 @@ opt_params_list:
 
 /* define foo(number bar -> string) */
 fdecl:
-  DEFINE ID LPAREN opt_params_list GIVES func_rtype RPAREN COLON INDENT stmt_list DEDENT
+  DEFINE ID LPAREN opt_params_list GIVES func_rtype RPAREN COLON EOL INDENT stmt_list DEDENT
   {
     {
       fname=$2;
       params=$4;
       rtype=$6;
-      body=$10
+      body=$11
     }
   }
 
@@ -103,16 +103,16 @@ stmt_list:
   | stmt stmt_list { $1::$2 }
 
 stmt:
-    expr EOL                                                                 { Expr $1 }
-  | dtype ID ASSIGN expr EOL                                                 { Assign ($1, $2, $4) } 
-  | ID ASSIGN expr EOL                                                       { InferAssign ($1, $3) }
-  | dtype ID array_dimensions EOL                                            { Alloc ($1, $2, $3) }
-  | dtype ID array_dimensions ASSIGN array_assign EOL                        { AllocAssign ($1, $2, $3, $5) }
-  | ID array_dimensions ASSIGN array_assign EOL                              { AllocInferAssign ($1, $2, $4) }
-  | IF expr COLON INDENT stmt_list DEDENT ELSE COLON INDENT stmt_list DEDENT { If ($2, $5, $10) }
-  | LOOP ID IN expr TO expr loop_by COLON INDENT stmt_list DEDENT            { IterLoop ($2, $4, $6, $7, $10) }
-  | LOOP expr COLON INDENT stmt_list DEDENT                                  { CondLoop ($2, $5) }
-  | RETURN expr EOL                                                          { Return $2 }
+    expr EOL                                                                         { Expr $1 }
+  | dtype ID ASSIGN expr EOL                                                         { Assign ($1, $2, $4) } 
+  | ID ASSIGN expr EOL                                                               { InferAssign ($1, $3) }
+  | dtype ID array_dimensions EOL                                                    { Alloc ($1, $2, $3) }
+  | dtype ID array_dimensions ASSIGN array_assign EOL                                { AllocAssign ($1, $2, $3, $5) }
+  | ID array_dimensions ASSIGN array_assign EOL                                      { AllocInferAssign ($1, $2, $4) }
+  | IF expr COLON EOL INDENT stmt_list DEDENT ELSE COLON EOL INDENT stmt_list DEDENT { If ($2, $6, $12) }
+  | LOOP ID IN expr TO expr loop_by COLON EOL INDENT stmt_list DEDENT                { IterLoop ($2, $4, $6, $7, $11) }
+  | LOOP expr COLON EOL INDENT stmt_list DEDENT                                      { CondLoop ($2, $6) }
+  | RETURN expr EOL                                                                  { Return $2 }
 
 array_dimensions:
     LSQUARE expr RSQUARE                  { [$2] }

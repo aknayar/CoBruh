@@ -49,8 +49,8 @@ let string = '"' ascii* '"'
 rule token = parse
 ['\t' '\r'] { token lexbuf } (* whitespace *)
 | ' '       { if !is_start_of_line then new_spacing := !new_spacing + 1 else (); token lexbuf }
-| '\n'      { set_new_line (); EOL::(token lexbuf) } 
-| '#'       { is_start_of_line := false; comment lexbuf } (* comment *)
+| '\n'      { let was_start = !is_start_of_line in set_new_line (); if not was_start then EOL::(token lexbuf) else token lexbuf } 
+| '#'       { comment lexbuf } (* comment *)
 
 (* Symbols *)
 | '(' { make_token_list LPAREN }
@@ -112,6 +112,6 @@ rule token = parse
 | _           { raise (Failure(illegal_character_err)) }
 
 and comment = parse
-  '\n' { set_new_line (); EOL::(token lexbuf) }
+  '\n' { let was_start = !is_start_of_line in set_new_line (); if not was_start then EOL::(token lexbuf) else token lexbuf }
 | eof  { dedent_to_zero () @ [EOF] }
 | _    { comment lexbuf }
