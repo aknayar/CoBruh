@@ -17,10 +17,12 @@ let invalid_unop_args_err = "invalid argument for unary operator"
 let duplicate_param_name_err = "function parameters must have unique names"
 let none_return_err = "function with non-none return type does not return anything"
 let mismatched_func_args_err = "mismatched arguments for function call"
-let return_in_global_err = "cannot return outside a function" (* TODO: implement *)
+let return_in_global_err = "cannot return outside a function"
 let return_in_none_err = "function that returns none cannot have return statement"
 let mismatched_return_err = "incorrect function return type"
 let missing_return_err = "missing return statement"
+let dangling_code_err = "code cannot appear after return"
+let nonguaranteed_return_err = "function is not guaranteed to return"
 let unimplemented_err = "unimplemented"
 
 let check (prog: program): sprogram =
@@ -160,23 +162,24 @@ let check (prog: program): sprogram =
           else Hashtbl.add body_scope p_name p_dtype
       ) fn.params in
       let body_sstmts = check_block body_scope fn.body in
-      (* TODO: need to check that function is guaranteed to return something *)
-      let _ = 
-        match fn.rtype with 
-            None -> List.iter (
-              fun s -> 
-                match s with
-                    SReturn _ -> raise (Failure return_in_none_err)
-                  | _ -> ()
-            ) body_sstmts
-          | DType typ ->
-              if not (List.fold_left (
-                fun return_found s ->
-                  match s with
-                      SReturn rtyp -> if fst rtyp != typ then raise (Failure mismatched_return_err) else true
-                    | _ -> return_found
-              ) false body_sstmts) then raise (Failure missing_return_err) else () in
-      let _ = is_checking_func := false in
+      let rec ensure_valid_return block = 
+        List.fold_left (
+          fun is_dangling s ->
+            if is_dangling then raise (Failure dangling_code_err)
+            else
+              match s with
+                  SReturn rtyp -> (
+                    match fn.rtype with
+                        None -> raise (Failure return_in_none_err)
+                      | DType typ -> if fst rtyp != typ then raise (Failure mismatched_return_err) else true
+                  )
+                | SIf (_, block_sstmts) -> let _ = ensure_valid_return block_sstmts in false
+                | SIfElse (_, if_sstmts, else_sstmts) -> (ensure_valid_return if_sstmts) && (ensure_valid_return else_sstmts)
+                | SIterLoop (_, _, _, _, block_sstmts) -> let _ = ensure_valid_return block_sstmts in false
+                | _ -> false
+        ) false block in
+      if not (ensure_valid_return body_sstmts) then raise (Failure nonguaranteed_return_err)
+      else let _ = is_checking_func := false in
       Hashtbl.add all_funcs fn.fname (fn.params, fn.rtype);
       {
         sfname = fn.fname;
