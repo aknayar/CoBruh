@@ -13,7 +13,7 @@ let deflate token =
 let _ =
   let lexbuf = Lexing.from_channel stdin in
   let program = Parser.program (deflate Scanner.token) lexbuf in
-  let sprogram = try Some (Semant.check program) with Failure err -> Printf.fprintf output "Error: %s\n" err; None in
+  let sprogram = try Some (Semant.check program) with Failure err -> Printf.fprintf stdout "Error: %s\n" err; None in
   let output_text = match sprogram with
       Some _ -> "Passed semantics check"
     | None -> "Failed semantics check" in
