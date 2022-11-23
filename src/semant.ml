@@ -1,28 +1,26 @@
 open Ast
 open Sast
 
-module StringMap = Map.Make(String)
-
+let dangling_code_err = "code cannot appear after return"
 let duplicate_id_err = "variable name already exists in scope"
-let missing_id_err = "variable does not exist"
+let duplicate_func_err = "function name already exists"
+let duplicate_param_name_err = "function parameters must have unique names"
 let invalid_assignment_err = "variable type does not match assigned value"
+let invalid_bop_args_err = "invalid arguments for binary operator"
+let invalid_cond_loop_err = "conditional loop must take in a boolean expression"
 let invalid_if_err = "if must take in a boolean expression"
 let invalid_iter_loop_err = "iterative loop must take in numbers"
-let invalid_cond_loop_err = "conditional loop must take in a boolean expression"
-let duplicate_func_err = "function name already exists"
-let missing_func_err = "function does not exist"
-let invalid_bop_args_err = "invalid arguments for binary operator"
-let mismatched_bop_args_err = "mismatched arguments for binary operator"
 let invalid_unop_args_err = "invalid argument for unary operator"
-let duplicate_param_name_err = "function parameters must have unique names"
-let none_return_err = "function with non-none return type does not return anything"
 let mismatched_func_args_err = "mismatched arguments for function call"
+let mismatched_bop_args_err = "mismatched arguments for binary operator"
+let mismatched_return_err = "incorrect function return type"
+let missing_func_err = "function does not exist"
+let missing_id_err = "variable does not exist"
+let missing_return_err = "missing return statement"
+let none_return_err = "function with non-none return type does not return anything"
+let nonguaranteed_return_err = "function is not guaranteed to return"
 let return_in_global_err = "cannot return outside a function"
 let return_in_none_err = "function that returns none cannot have return statement"
-let mismatched_return_err = "incorrect function return type"
-let missing_return_err = "missing return statement"
-let dangling_code_err = "code cannot appear after return"
-let nonguaranteed_return_err = "function is not guaranteed to return"
 let unimplemented_err = "unimplemented"
 
 let check (prog: program): sprogram =
