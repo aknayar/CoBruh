@@ -176,7 +176,8 @@ let check (prog: program): sprogram =
                 | SIterLoop (_, _, _, _, block_sstmts) -> let _ = ensure_valid_return block_sstmts in false
                 | _ -> false
         ) false block in
-      if not (ensure_valid_return body_sstmts) then raise (Failure nonguaranteed_return_err)
+      let has_valid_return = ensure_valid_return body_sstmts in
+      if not has_valid_return && fn.rtype != None then raise (Failure nonguaranteed_return_err)
       else let _ = is_checking_func := false in
       Hashtbl.add all_funcs fn.fname (fn.params, fn.rtype);
       {
