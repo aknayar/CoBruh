@@ -52,6 +52,8 @@ type stmt =
   | IterLoop of string * expr * expr * expr * stmt list
   | CondLoop of expr * stmt list
   | Return of expr
+  | Continue
+  | Stop
 
 type bind = dtype * string (* number x, only appears in function parameters *)
 
@@ -155,7 +157,9 @@ let rec string_of_stmt s =
       let _  = curr_indent_level := !curr_indent_level - 1 in
       loop_str ^ loop_stmts
   | Return ex -> 
-      "return " ^ string_of_expr ex ^ ".\n" in
+      "return " ^ string_of_expr ex ^ ".\n"
+  | Continue -> "continue"
+  | Stop -> "stop" in
       String.concat "" (List.init (!curr_indent_level) (fun x -> "  ")) ^ (string_of_stmt_raw s)
 
 let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id

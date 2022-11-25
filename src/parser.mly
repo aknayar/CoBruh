@@ -5,7 +5,7 @@
 %token INDENT DEDENT EOL
 %token LPAREN RPAREN LSQUARE RSQUARE COMMA COLON PIPE 
 %token ASSIGN PLUS MINUS TIMES INTDIV DIV MOD EQ NEQ LT LEQ GT GEQ AND OR NOT
-%token IF ELSE LOOP IN TO BY
+%token IF ELSE LOOP IN TO BY CONTINUE STOP
 %token DEFINE NONE GIVES RETURN
 %token NUMBER BOOL CHAR STRING 
 %token USE
@@ -116,6 +116,8 @@ stmt:
   | LOOP ID IN expr TO expr loop_by COLON EOL INDENT stmt_list DEDENT                { IterLoop ($2, $4, $6, $7, $11) }
   | LOOP expr COLON EOL INDENT stmt_list DEDENT                                      { CondLoop ($2, $6) }
   | RETURN expr EOL                                                                  { Return $2 }
+  | CONTINUE EOL                                                                     { Continue }
+  | STOP EOL                                                                         { Stop }
 
 loop_by:
     /* nothing */ { NumberLit 1. }

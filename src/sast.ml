@@ -24,6 +24,8 @@ type sstmt =
   | SIterLoop of string * sexpr * sexpr * sexpr * sstmt list
   | SCondLoop of sexpr * sstmt list
   | SReturn of sexpr
+  | SContinue
+  | SStop
 
 type sfunc = {
   sfname: string;
