@@ -86,8 +86,8 @@ rule token = parse
 | "in"       { [IN] }
 | "to"       { [TO] }
 | "by"       { [BY] }
-| "continue" { [CONTINUE] }
-| "stop"     { [STOP] }
+| "continue" { make_token_list CONTINUE }
+| "stop"     { make_token_list STOP }
 
 (* Functions *)
 | "define" { make_token_list DEFINE }
