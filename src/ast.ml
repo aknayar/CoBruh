@@ -158,8 +158,8 @@ let rec string_of_stmt s =
       loop_str ^ loop_stmts
   | Return ex -> 
       "return " ^ string_of_expr ex ^ ".\n"
-  | Continue -> "continue"
-  | Stop -> "stop" in
+  | Continue -> "continue\n"
+  | Stop -> "stop\n" in
       String.concat "" (List.init (!curr_indent_level) (fun x -> "  ")) ^ (string_of_stmt_raw s)
 
 let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id
