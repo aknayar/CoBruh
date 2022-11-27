@@ -14,9 +14,9 @@ let _ =
   let lexbuf = Lexing.from_channel input_file in
   let program = Parser.program (deflate Scanner.token) lexbuf in
   let parser_output = Ast.string_of_program program in
-  Printf.fprintf stdout "%s\n" (parser_output);
+  Printf.fprintf stdout "\n%s\n" (parser_output);
   let sprogram = try Some (Semant.check program) with Failure err -> Printf.fprintf stdout "Error: %s\n" err; None in
   let semantics_output = match sprogram with
       Some _ -> "Passed semantics check"
     | None -> "Failed semantics check" in
-  Printf.fprintf stdout "%s\n" semantics_output
+  Printf.fprintf stdout "\n%s\n" semantics_output
