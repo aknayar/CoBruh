@@ -1,3 +1,7 @@
 (library
  (name CoBruh)
  (libraries llvm llvm.analysis))
+
+(ocamllex scanner)
+
+(ocamlyacc parser)
