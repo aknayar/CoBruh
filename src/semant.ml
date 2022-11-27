@@ -142,6 +142,8 @@ let check (prog: program): sprogram =
           let block_sstmts = check_block (Hashtbl.create default_capacity) block in
           SCondLoop (prd_sexpr, block_sstmts)
     | Return exp -> if not !is_checking_func then raise (Failure return_in_global_err) else SReturn (check_expr exp)
+    | Continue -> SContinue (* TODO implement (only valid in loops) *)
+    | Stop -> SStop         (* TODO implement (only valid it loops) *)
   and check_block scope block = 
     let _ = all_scopes := scope::(!all_scopes) in
     let res = List.map check_stmt block in

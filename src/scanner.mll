@@ -80,12 +80,14 @@ rule token = parse
 | "not" { [NOT] }
 
 (* Branching *)
-| "if"   { make_token_list IF }
-| "else" { make_token_list ELSE }
-| "loop" { make_token_list LOOP }
-| "in"   { [IN] }
-| "to"   { [TO] }
-| "by"   { [BY] }
+| "if"       { make_token_list IF }
+| "else"     { make_token_list ELSE }
+| "loop"     { make_token_list LOOP }
+| "in"       { [IN] }
+| "to"       { [TO] }
+| "by"       { [BY] }
+| "continue" { make_token_list CONTINUE }
+| "stop"     { make_token_list STOP }
 
 (* Functions *)
 | "define" { make_token_list DEFINE }

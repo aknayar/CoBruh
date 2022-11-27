@@ -27,6 +27,7 @@ type bop =
 type uop = 
     Not
   | Neg
+  | Abs
 
 type expr = 
     NumberLit of float 
@@ -51,6 +52,8 @@ type stmt =
   | IterLoop of string * expr * expr * expr * stmt list
   | CondLoop of expr * stmt list
   | Return of expr
+  | Continue
+  | Stop
 
 type bind = dtype * string (* number x, only appears in function parameters *)
 
@@ -103,10 +106,6 @@ let string_of_bop = function
   | And -> "and"
   | Or -> "or"
 
-let string_of_uop = function
-    Not -> "not"
-  | Neg -> "-"
-
 let rec string_of_expr = function
     NumberLit n -> if classify_float (fst (modf n)) == FP_zero then string_of_int (Float.to_int n) else string_of_float n
   | BoolLit b -> if b then "true" else "false"
@@ -114,7 +113,10 @@ let rec string_of_expr = function
   | StringLit s -> "\"" ^ s ^ "\""
   | Id id -> id
   | Binop (e1, op, e2) -> string_of_expr e1 ^ " " ^ string_of_bop op ^ " " ^ string_of_expr e2
-  | Unop (op, e) -> string_of_uop op ^ " " ^ string_of_expr e
+  | Unop (op, e) -> (match op with
+      Not -> "not " ^ string_of_expr e
+    | Neg -> "-" ^ string_of_expr e
+    | Abs -> "|" ^ string_of_expr e ^ "|")
   | Call (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | Elem (l, e) -> l ^ "[" ^ string_of_expr e ^ "]"
 
@@ -155,7 +157,9 @@ let rec string_of_stmt s =
       let _  = curr_indent_level := !curr_indent_level - 1 in
       loop_str ^ loop_stmts
   | Return ex -> 
-      "return " ^ string_of_expr ex ^ ".\n" in
+      "return " ^ string_of_expr ex ^ ".\n"
+  | Continue -> "continue\n"
+  | Stop -> "stop\n" in
       String.concat "" (List.init (!curr_indent_level) (fun x -> "  ")) ^ (string_of_stmt_raw s)
 
 let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id
