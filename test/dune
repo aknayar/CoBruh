@@ -1,4 +1,5 @@
-(tests
- (names parsertest semanttest)
- (deps parserinput.bruh semantinput.bruh)
+(test
+ (name test)
+ (modules Test)
+ (deps input.bruh)
  (libraries CoBruh llvm llvm.analysis))

@@ -5,4 +5,7 @@ all:
 .PHONY: test
 test:
 	dune test
-	@echo "Output in _build/default/test"
+
+.PHONY: clean
+clean:
+	rm -rf _build/
