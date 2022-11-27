@@ -82,7 +82,7 @@ let check (prog: program): sprogram =
                 ) passed_params fn_params then raise (Failure mismatched_func_args_err)
                 else (res_type, SCall (id, (List.map check_expr passed_params)))
         )
-    | Elem (id, ind) -> raise (Failure unimplemented_err)
+    | Elem _ -> raise (Failure unimplemented_err)
 
   in
   let rec check_stmt = function
@@ -109,9 +109,9 @@ let check (prog: program): sprogram =
                 else ()
             | None -> Hashtbl.add (List.hd !all_scopes) id (fst sexpr')
         ); SInferAssign (id, sexpr')
-    | Alloc (typ, id, exps) -> raise (Failure unimplemented_err)
-    | AllocAssign (typ, id, exps, arr) -> raise (Failure unimplemented_err)
-    | AllocInferAssign (id, exps, arr) -> raise (Failure unimplemented_err)
+    | Alloc _ -> raise (Failure unimplemented_err)
+    | AllocAssign _ -> raise (Failure unimplemented_err)
+    | AllocInferAssign _ -> raise (Failure unimplemented_err)
     | If (prd, block) -> 
         let prd_sexpr = check_expr prd in
         if fst prd_sexpr != Bool then raise (Failure invalid_if_err)

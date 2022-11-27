@@ -1,0 +1,3 @@
+(library
+ (name CoBruh)
+ (libraries llvm llvm.analysis))

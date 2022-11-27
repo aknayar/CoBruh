@@ -80,7 +80,7 @@ type program = decl list
 
 let curr_indent_level = ref 0
 
-let rec string_of_dtype = function
+let string_of_dtype = function
     Number -> "number"
   | Bool -> "boolean"
   | Char -> "character"
@@ -139,7 +139,7 @@ let rec string_of_stmt s =
       let _  = curr_indent_level := !curr_indent_level + 1 in
       let if_stmts = String.concat "" (List.map string_of_stmt s1) in
       let _  = curr_indent_level := !curr_indent_level - 1 in 
-      let else_str = String.concat "" (List.init (!curr_indent_level) (fun x->"  ")) ^ "else:\n" in 
+      let else_str = String.concat "" (List.init (!curr_indent_level) (fun _ -> "  ")) ^ "else:\n" in 
       let _  = curr_indent_level := !curr_indent_level + 1 in
       let else_stmts = String.concat "" (List.map string_of_stmt s2) in
       let _  = curr_indent_level := !curr_indent_level - 1 in
@@ -160,7 +160,7 @@ let rec string_of_stmt s =
       "return " ^ string_of_expr ex ^ ".\n"
   | Continue -> "continue\n"
   | Stop -> "stop\n" in
-      String.concat "" (List.init (!curr_indent_level) (fun x -> "  ")) ^ (string_of_stmt_raw s)
+      String.concat "" (List.init (!curr_indent_level) (fun _ -> "  ")) ^ (string_of_stmt_raw s)
 
 let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id
 
