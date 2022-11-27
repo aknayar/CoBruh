@@ -1,3 +1,5 @@
+*.cmi
+*.cmo
 _build/
 *.native
 test_src/*.txt

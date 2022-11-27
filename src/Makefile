@@ -1,5 +1,8 @@
 .PHONY: all
-all: semant
+all:
+	ocamlc -c ast.ml
+	ocamlc -c sast.ml
+	ocamlc -c semant.ml
 
 .PHONY: semant
 semant:
@@ -13,4 +16,4 @@ parser:
 	
 .PHONY: clean
 clean:
-	rm -rf _build/ *.native test_src/*.txt
+	rm -rf *.cmi *.cmo _build/ *.native test_src/*.txt
