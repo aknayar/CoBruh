@@ -10,6 +10,9 @@ let deflate token =
         | hd::tl -> List.iter (fun tok -> Queue.add tok q) tl; hd 
 
 let _ =
-  let lexbuf = Lexing.from_channel stdin in
+  let input_file = open_in "./parserinput.bruh" in
+  let lexbuf = Lexing.from_channel input_file in
   let program = Parser.program (deflate Scanner.token) lexbuf in
-  Printf.fprintf stdout "%s\n" (Ast.string_of_program program);
+  let output_file = open_out "./parseroutput.txt" in
+  Printf.fprintf output_file "%s\n" (Ast.string_of_program program);
+  close_out output_file;
