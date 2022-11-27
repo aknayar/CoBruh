@@ -18,5 +18,5 @@ let _ =
       Some _ -> "Passed semantics check"
     | None -> "Failed semantics check" in
   let output_file = open_out "./semantoutput.txt" in
-  Printf.fprintf stdout "%s\n" output_text;
+  Printf.fprintf output_file "%s\n" output_text;
   close_out output_file;

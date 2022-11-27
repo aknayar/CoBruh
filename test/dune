@@ -1,3 +1,4 @@
 (tests
  (names parsertest semanttest)
+ (deps parserinput.bruh semantinput.bruh)
  (libraries CoBruh llvm llvm.analysis))
