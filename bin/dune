@@ -1,0 +1,4 @@
+(executable
+ (public_name CoBruh)
+ (name main)
+ (libraries CoBruh llvm llvm.analysis))
