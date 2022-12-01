@@ -14,8 +14,8 @@ and sx =
 
 type sstmt = 
     SExpr of sexpr
-  | SAssign of dtype * string * sexpr
-  | SInferAssign of string * sexpr
+  | SInit of string * sexpr (* for initializing and assigning a variable *)
+  | SReassign of string * sexpr (* for reassigning an existing variable *)
   | SAlloc of dtype * string * sexpr
   | SAllocAssign of dtype * string * sexpr * sexpr list
   | SAllocInferAssign of string * sexpr * sexpr list
