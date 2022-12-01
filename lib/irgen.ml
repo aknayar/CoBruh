@@ -14,7 +14,7 @@ open Sast
 module StringMap = Map.Make(String)
 
 (* translate : Sast.program -> Llvm.module *)
-let translate (globals, functions) =
+let translate (decls) =
   let context    = L.global_context () in
 
   (* Create the LLVM compilation module into which
@@ -59,7 +59,7 @@ let translate (globals, functions) =
     let (the_function, _) = StringMap.find fdecl.sfname function_decls in
     let builder = L.builder_at_end context (L.entry_block the_function) in
 
-    let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
+    let num_format_str = L.build_global_stringptr "%f\n" "fmt" builder in
 
     (* Construct the function's "locals": formal arguments and locally
        declared variables.  Allocate each on the stack, initialize their
@@ -100,8 +100,10 @@ let translate (globals, functions) =
         let e1' = build_expr builder e1
         and e2' = build_expr builder e2 in
         (match op with
-           A.Add     -> L.build_add
-         | A.Sub     -> L.build_sub
+           A.Plus    -> L.build_fadd
+         | A.Minus   -> L.build_fsub
+         | A.Times   -> L.build_fmul
+         | A.Div     -> L.build_fdiv
          | A.And     -> L.build_and
          | A.Or      -> L.build_or
          | A.Equal   -> L.build_icmp L.Icmp.Eq
@@ -109,7 +111,7 @@ let translate (globals, functions) =
          | A.Less    -> L.build_icmp L.Icmp.Slt
         ) e1' e2' "tmp" builder
       | SCall ("say", [e]) ->
-        L.build_call printf_func [| int_format_str ; (build_expr builder e) |]
+        L.build_call printf_func [| num_format_str ; (build_expr builder e) |]
           "printf" builder
       | SCall (f, args) ->
         let (fdef, fdecl) = StringMap.find f function_decls in
