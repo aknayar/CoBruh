@@ -1,7 +1,7 @@
 module L = Llvm
 open Ast
 open Sast
-
+(* test *)
 let translate (prog: sprogram): L.llmodule = 
   let context = L.global_context () in
   let mdl = L.create_module context "CoBruh" in
