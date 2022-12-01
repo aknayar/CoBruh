@@ -12,7 +12,7 @@
 (package
  (name CoBruh)
  (synopsis "CoBruh compiler")
- (description "A CoBruh compiler written in OCaml and managed by dune.")
+ (description "A CoBruh compiler written in OCaml.")
  (depends ocaml dune llvm llvm.analysis))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
