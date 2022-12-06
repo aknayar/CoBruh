@@ -98,16 +98,17 @@ let check (prog: program): sprogram =
         SAssign (typ, id, sexpr')
     | InferAssign (id, exp) -> 
         let sexpr' = check_expr exp in 
-        if fst sexpr' = None then raise (Failure none_assignment_err) else ();
-        let curr_dtype = fst sexpr' in
-        let sc = List.find_opt (fun scope -> Hashtbl.mem scope id) !all_scopes in (
-          match sc with 
-              Some scope -> 
-                let prev_dtype = Hashtbl.find scope id in
-                if prev_dtype != curr_dtype then raise (Failure invalid_assignment_err)
-                else ()
-            | None -> Hashtbl.add (List.hd !all_scopes) id (fst sexpr')
-        ); SInferAssign (id, sexpr')
+        if fst sexpr' = None then raise (Failure none_assignment_err)
+        else
+          let curr_dtype = fst sexpr' in
+          let sc = List.find_opt (fun scope -> Hashtbl.mem scope id) !all_scopes in (
+            match sc with 
+                Some scope -> 
+                  let prev_dtype = Hashtbl.find scope id in
+                  if prev_dtype != curr_dtype then raise (Failure invalid_assignment_err)
+                  else ()
+              | None -> Hashtbl.add (List.hd !all_scopes) id (fst sexpr')
+          ); SInferAssign (id, sexpr')
     | Alloc _ -> raise (Failure unimplemented_err)
     | AllocAssign _ -> raise (Failure unimplemented_err)
     | AllocInferAssign _ -> raise (Failure unimplemented_err)
