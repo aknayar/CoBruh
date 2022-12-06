@@ -131,5 +131,5 @@ dtype:
 
 /* allows functions to return none */
 func_rtype:
-    dtype { DType $1 }
+    dtype { $1 }
   | NONE  { None }

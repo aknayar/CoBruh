@@ -21,3 +21,4 @@ define baz(none -> none):
   a is 10
 
 boolean c is bar(1)
+# bar()
