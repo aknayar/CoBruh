@@ -23,6 +23,5 @@ define baz(none -> none):
 
 boolean c is bar(1)
 baz()
-
-# none a is 5
-# a is none
+# number a is baz()
+# none a is baz()
