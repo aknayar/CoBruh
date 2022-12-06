@@ -17,6 +17,7 @@ let mismatched_return_err = "incorrect function return type"
 let missing_func_err = "function does not exist"
 let missing_id_err = "variable does not exist"
 let missing_return_err = "missing return statement"
+let none_assignment_err = "cannot assign to none"
 let none_return_err = "function with non-none return type does not return anything"
 let nonguaranteed_return_err = "function is not guaranteed to return"
 let return_in_global_err = "cannot return outside a function"
@@ -85,7 +86,8 @@ let check (prog: program): sprogram =
       Expr exp -> SExpr (check_expr exp)
     | Assign (typ, id, exp) -> 
         let sexpr' = check_expr exp in 
-        if fst sexpr' != typ then raise (Failure invalid_assignment_err)
+        if fst sexpr' = None then raise (Failure none_assignment_err)
+        else if fst sexpr' != typ then raise (Failure invalid_assignment_err)
         else
           let curr_scope = List.hd !all_scopes in
           if Hashtbl.mem curr_scope id then
@@ -96,6 +98,7 @@ let check (prog: program): sprogram =
         SAssign (typ, id, sexpr')
     | InferAssign (id, exp) -> 
         let sexpr' = check_expr exp in 
+        if fst sexpr' = None then raise (Failure none_assignment_err) else ();
         let curr_dtype = fst sexpr' in
         let sc = List.find_opt (fun scope -> Hashtbl.mem scope id) !all_scopes in (
           match sc with 
