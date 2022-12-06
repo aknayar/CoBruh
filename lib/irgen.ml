@@ -28,17 +28,18 @@ let translate (prog: sprogram): L.llmodule =
     | SBinop (e1, op, e2) ->
       let e1' = build_expr builder e1
       and e2' = build_expr builder e2 in
-      (match op with
-         A.Plus    -> L.build_fadd
-       | A.Minus   -> L.build_fsub
-       | A.Times   -> L.build_fmul
-       | A.Div     -> L.build_fdiv
-       | A.And     -> L.build_and
-       | A.Or      -> L.build_or
-       | A.Eq      -> L.build_icmp L.Icmp.Eq
-       | A.Neq     -> L.build_icmp L.Icmp.Ne
-       | A.Less    -> L.build_icmp L.Icmp.Slt
-       | _         -> raise (Failure "unimplemented")
+      (
+        match op with
+            A.Plus    -> L.build_fadd
+          | A.Minus   -> L.build_fsub
+          | A.Times   -> L.build_fmul
+          | A.Div     -> L.build_fdiv
+          | A.And     -> L.build_and
+          | A.Or      -> L.build_or
+          | A.Eq      -> L.build_icmp L.Icmp.Eq
+          | A.Neq     -> L.build_icmp L.Icmp.Ne
+          | A.Less    -> L.build_icmp L.Icmp.Slt
+          | _         -> raise (Failure "unimplemented")
       ) e1' e2' "tmp" builder
     | SCall ("say", [e]) ->
       let num_format_str = L.build_global_stringptr "%g\n" "fmt" builder in
