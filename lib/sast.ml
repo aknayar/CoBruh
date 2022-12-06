@@ -30,7 +30,7 @@ type sstmt =
 type sfunc = {
   sfname: string;
   sparams: bind list;
-  srtype: func_rtype;
+  srtype: dtype;
   sbody: sstmt list;
 }
 

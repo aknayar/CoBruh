@@ -19,5 +19,9 @@ define bar(number a -> boolean):
 
 define baz(none -> none):
   a is 10
+  # return a
 
 boolean c is bar(1)
+baz()
+# number a is baz()
+# none a is baz()

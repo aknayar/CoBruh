@@ -71,17 +71,13 @@ let check (prog: program): sprogram =
     | Call (id, passed_params) -> 
         let (fn_params, fn_rtype) = 
           if not (Hashtbl.mem all_funcs id) then raise (Failure missing_func_err) 
-          else Hashtbl.find all_funcs id in (
-          match fn_rtype with
-              None -> raise (Failure none_return_err)
-            | DType res_type -> 
-                if List.length passed_params != List.length fn_params then raise (Failure mismatched_func_args_err)
-                else if List.exists2 (
-                  fun passed_param fn_param -> let (passed_dtype, _) = check_expr passed_param 
-                  in passed_dtype != fst fn_param
-                ) passed_params fn_params then raise (Failure mismatched_func_args_err)
-                else (res_type, SCall (id, (List.map check_expr passed_params)))
-        )
+          else Hashtbl.find all_funcs id in 
+        if List.length passed_params != List.length fn_params then raise (Failure mismatched_func_args_err)
+        else if List.exists2 (
+          fun passed_param fn_param -> let (passed_dtype, _) = check_expr passed_param 
+          in passed_dtype != fst fn_param
+        ) passed_params fn_params then raise (Failure mismatched_func_args_err)
+        else (fn_rtype, SCall (id, List.map check_expr passed_params))
     | Elem _ -> raise (Failure unimplemented_err)
 
   in
@@ -171,7 +167,7 @@ let check (prog: program): sprogram =
                   SReturn rtyp -> (
                     match fn.rtype with
                         None -> raise (Failure return_in_none_err)
-                      | DType typ -> if fst rtyp != typ then raise (Failure mismatched_return_err) else true
+                      | _ as typ -> if fst rtyp != typ then raise (Failure mismatched_return_err) else true
                   )
                 | SIf (_, block_sstmts) -> let _ = ensure_valid_return block_sstmts in false
                 | SIfElse (_, if_sstmts, else_sstmts) -> (ensure_valid_return if_sstmts) && (ensure_valid_return else_sstmts)

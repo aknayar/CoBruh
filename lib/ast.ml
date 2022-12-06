@@ -3,9 +3,6 @@ type dtype =
   | Bool 
   | Char 
   | String 
-
-type func_rtype =
-    DType of dtype
   | None
 
 type bop = 
@@ -68,7 +65,7 @@ type bind = dtype * string (* number x, only appears in function parameters *)
 type func = {
   fname: string;
   params: bind list;
-  rtype: func_rtype;
+  rtype: dtype;
   body: stmt list;
 }
 
@@ -85,9 +82,6 @@ let string_of_dtype = function
   | Bool -> "boolean"
   | Char -> "character"
   | String -> "string"
-
-let string_of_func_rtype = function
-    DType typ -> string_of_dtype typ
   | None -> "none"
 
 let string_of_bop = function
@@ -172,7 +166,7 @@ let string_of_func_params (binds: bind list) =
 let string_of_func (fn: func) =
   let func_def = "define " ^ fn.fname 
   ^ " (" ^ string_of_func_params fn.params
-  ^ " -> " ^ string_of_func_rtype fn.rtype ^ "):\n" in
+  ^ " -> " ^ string_of_dtype fn.rtype ^ "):\n" in
   let _  = curr_indent_level := !curr_indent_level + 1 in
   let func_stmts = String.concat "" (List.map string_of_stmt fn.body) in
   let _  = curr_indent_level := !curr_indent_level - 1 in
