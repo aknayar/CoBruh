@@ -24,7 +24,9 @@ let return_in_global_err = "cannot return outside a function"
 let return_in_none_err = "function that returns none cannot have return statement"
 let unimplemented_err = "unimplemented"
 
-let check (prog: program): sprogram =
+let check (binds, funcs, stmts): sprogram =
+  let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}] in 
+
   let default_capacity = 10 in
   (* 
      all_funcs contains all function definitions 
@@ -188,9 +190,4 @@ let check (prog: program): sprogram =
         srtype = fn.rtype;
         sbody = body_sstmts;
       }
-  in
-  let check_decl = function
-      Stmt st -> SStmt (check_stmt st)
-    | Func fn -> SFunc (check_func fn)
-  in
-  List.map check_decl prog
+  in (binds, List.map check_func funcs)

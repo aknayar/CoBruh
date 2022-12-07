@@ -52,7 +52,7 @@ type stmt =
   | Continue
   | Stop
 
-type bind = dtype * string (* number x, only appears in function parameters *)
+type bind = dtype * string (* number x *)
 
 (* 
   define foo(number bar -> string)
@@ -73,7 +73,7 @@ type decl =
     Stmt of stmt
   | Func of func
 
-type program = decl list
+type program = bind list * func list * stmt list
 
 let curr_indent_level = ref 0
 
@@ -172,10 +172,8 @@ let string_of_func (fn: func) =
   let _  = curr_indent_level := !curr_indent_level - 1 in
   func_def ^ func_stmts
 
-let string_of_program (prog: program) =
+let string_of_program (binds, funcs, stmts) =
   "Parsed program: \n\n" ^
-  String.concat "" (List.map (fun (d: decl): string -> 
-    match d with
-        Stmt st -> string_of_stmt st
-      | Func fn -> string_of_func fn
-  ) prog)
+  String.concat "" (List.map string_of_bind binds) ^ 
+  String.concat "" (List.map string_of_func funcs) ^ 
+  String.concat "" (List.map string_of_stmt stmts)

@@ -33,16 +33,15 @@
 %%
 
 program:
-  decls EOF { $1 }
+  decls stmt_list EOF { (fst $1, snd $1, $2) }
 
-/* list of stmts and funcs */
 decls:
-   /* nothing */ { [] }
- | stmt decls    { (Stmt $1)::$2 }
- | fdecl decls   { (Func $1)::$2 }
+   /* nothing */ { ([], [])               }
+ | decls bind  { (($2 :: fst $1), snd $1) }
+ | decls fdecl { (fst $1, ($2 :: snd $1)) }
 
 bind:
-  dtype ID { ($1, $2) }
+  dtype ID EOL { ($1, $2) }
 
 /* functions with nonempty parameters */
 params_list:
