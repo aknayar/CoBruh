@@ -33,7 +33,7 @@
 %%
 
 program:
-  decls stmt_list EOF { (fst $1, snd $1, $2) }
+  decls stmt_list EOF { (List.rev (fst $1), List.rev (snd $1), $2) }
 
 decls:
    /* nothing */ { ([], [])               }

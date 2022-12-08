@@ -19,11 +19,15 @@ define baz(none -> none):
   a is 10
   # return a
 
+define call(none -> number):
+  return foo(1)
+
 
 number b # order of vdecl and fdecl does not matter as long as main comes after
 
 boolean c is bar(1)
 baz()
+call()
 # newname is baz()
 # number a is baz()
 # none a is baz()
