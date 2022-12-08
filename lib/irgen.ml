@@ -10,11 +10,13 @@ let translate (binds, sfuncs): L.llmodule =
 
   let f_t = L.float_type context 
   and i8_t = L.i8_type context 
-  and i1_t = L.i1_type context in
+  and i1_t = L.i1_type context 
+  and void_t = L.void_type context in
 
   let lltype_of_dtype = function
       Number -> f_t
     | Bool -> i1_t
+    | None -> void_t
     | _ -> raise (Failure "unimplemented") 
   in
 
