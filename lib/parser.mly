@@ -33,13 +33,15 @@
 %%
 
 program:
-  decls EOF { $1 }
+  decls stmt_list EOF { (List.rev (fst $1), List.rev (snd $1), $2) }
 
-/* list of stmts and funcs */
 decls:
-   /* nothing */ { [] }
- | stmt decls    { (Stmt $1)::$2 }
- | fdecl decls   { (Func $1)::$2 }
+   /* nothing */ { ([], [])               }
+ | decls vdecl { (($2 :: fst $1), snd $1) }
+ | decls fdecl { (fst $1, ($2 :: snd $1)) }
+
+vdecl:
+  dtype ID EOL { ($1, $2) }
 
 bind:
   dtype ID { ($1, $2) }

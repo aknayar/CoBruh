@@ -38,5 +38,5 @@ type sdecl =
     SStmt of sstmt
   | SFunc of sfunc
 
-type sprogram = sdecl list
+type sprogram = bind list * sfunc list
 
