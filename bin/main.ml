@@ -43,4 +43,9 @@ let _ =
             Some _ -> "Passed semantics check"
           | None -> "Failed semantics check"
       )
+  | Ir ->
+      let ast = Parser.program (deflate Scanner.token) lexbuf in
+      let sast = Semant.check ast in
+      let ir = Irgen.translate sast in
+      Printf.fprintf !out_channel "\n%s\n" (Llvm.string_of_llmodule ir)
   | _ -> raise (Failure "not implemented")
