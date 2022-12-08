@@ -1,4 +1,4 @@
 (rule
  (alias runtest)
- (deps ../bin/main.exe)
+ (deps ../bin/main.exe ./input.bruh)
  (action (run ./runtest.sh)))
