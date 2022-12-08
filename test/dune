@@ -1,5 +1,4 @@
-(test
- (name test)
- (modules Test)
- (deps input.bruh)
- (libraries CoBruh llvm llvm.analysis))
+(rule
+ (alias runtest)
+ (deps ../bin/main.exe)
+ (action (run ./runtest.sh)))

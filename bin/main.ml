@@ -1,6 +1,6 @@
 open CoBruh
 
-type action = Ast | Sast | Ir | Compile
+type action = Parse | Semantics | Ir | Compile
 
 let _ =
   let deflate token = 
@@ -15,8 +15,8 @@ let _ =
   let action = ref Compile in
   let set_action a () = action := a in
   let speclist = [
-    ("-a", Arg.Unit (set_action Ast), "Print AST");
-    ("-s", Arg.Unit (set_action Sast), "Print semantics check");
+    ("-p", Arg.Unit (set_action Parse), "Print AST");
+    ("-s", Arg.Unit (set_action Semantics), "Print semantics check");
     ("-l", Arg.Unit (set_action Ir), "Print LLVM IR");
     ("-c", Arg.Unit (set_action Compile), "Check and print LLVM IR (default)");
   ] in  
@@ -27,15 +27,16 @@ let _ =
   
   let lexbuf = Lexing.from_channel !in_channel in
   match !action with
-    Ast -> 
+    Parse -> 
       let ast = try Some (Parser.program (deflate Scanner.token) lexbuf) with Failure err -> Printf.fprintf !out_channel "\nError: %s\n" err; None in
       (
         match ast with
             Some s -> Printf.fprintf !out_channel "\n%s\n" (Ast.string_of_program s)
           | None -> ()
       )
-  | Sast -> 
+  | Semantics -> 
       let ast = Parser.program (deflate Scanner.token) lexbuf in
+      Printf.fprintf !out_channel "\n%s\n" (Ast.string_of_program ast);
       let sast = try Some (Semant.check ast) with Failure err -> Printf.fprintf !out_channel "\nError: %s" err; None in
       Printf.fprintf !out_channel "\n%s\n" (
         match sast with
