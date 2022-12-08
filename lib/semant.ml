@@ -27,7 +27,6 @@ let unimplemented_err = "unimplemented"
 let check (binds, funcs, stmts): sprogram =
   let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}] in 
   
-
   let default_capacity = 10 in
   (* 
      all_funcs contains all function definitions 
@@ -41,25 +40,14 @@ let check (binds, funcs, stmts): sprogram =
   let all_scopes = ref [Hashtbl.create default_capacity] in
   let is_checking_func = ref false in
 
-  let check_binds (kind : string) (binds : bind list) =
-    List.iter (function
-        (None, b) -> raise (Failure ("illegal none " ^ kind ^ " " ^ b))
-      | _ -> ()) binds;
-    let rec dups = function
-        [] -> ()
-      |	((_,n1) :: (_,n2) :: _) when n1 = n2 ->
-	  raise (Failure ("duplicate " ^ kind ^ " " ^ n1))
-      | _ :: t -> dups t
-    in dups (List.sort (fun (_,a) (_,b) -> compare a b) binds)
-  in
-
-  List.iter (fun (dtype, name) -> Hashtbl.add (List.hd !all_scopes) name dtype) binds;
-
   (**** Check global variables ****)
+  List.iter (
+    fun (typ, name) -> 
+      let scope = List.hd !all_scopes in 
+      if Hashtbl.mem scope name then raise (Failure duplicate_id_err)
+      else Hashtbl.add scope name typ
+  ) binds;
 
-  check_binds "global" binds;
-
-  
   let rec check_expr = function
       NumberLit num -> (Number, SNumberLit num)
     | BoolLit bl -> (Bool, SBoolLit bl)
