@@ -37,11 +37,14 @@ program:
 
 decls:
    /* nothing */ { ([], [])               }
- | decls bind  { (($2 :: fst $1), snd $1) }
+ | decls vdecl { (($2 :: fst $1), snd $1) }
  | decls fdecl { (fst $1, ($2 :: snd $1)) }
 
-bind:
+vdecl:
   dtype ID EOL { ($1, $2) }
+
+bind:
+  dtype ID { ($1, $2) }
 
 /* functions with nonempty parameters */
 params_list:

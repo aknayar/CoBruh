@@ -174,6 +174,6 @@ let string_of_func (fn: func) =
 
 let string_of_program (binds, funcs, stmts) =
   "Parsed program: \n\n" ^
-  String.concat "" (List.map string_of_bind binds) ^ 
-  String.concat "" (List.map string_of_func funcs) ^ 
+  String.concat "" (List.map string_of_bind binds) ^ "\n" ^
+  String.concat "" (List.map string_of_func funcs) ^
   String.concat "" (List.map string_of_stmt stmts)
