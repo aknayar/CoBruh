@@ -124,7 +124,7 @@ let check (binds, funcs, stmts): sprogram =
           else 
             let if_sstmts = check_block (Hashtbl.create 10) if_block in
             let else_sstmts = check_block (Hashtbl.create 10) else_block in
-            SIfElse (prd_sexpr, if_sstmts, else_sstmts)
+            SIf (prd_sexpr, if_sstmts, else_sstmts)
       | IterLoop (id, st, en, by, loop_block) -> 
           let start_sexpr = check_expr st in
           let end_sexpr = check_expr en in
@@ -171,8 +171,7 @@ let check (binds, funcs, stmts): sprogram =
                         None -> raise (Failure return_in_none_err)
                       | _ as typ -> if fst rtyp != typ then raise (Failure mismatched_return_err) else true
                   )
-                | SIf (_, block_sstmts) -> let _ = ensure_valid_return block_sstmts in false
-                | SIfElse (_, if_sstmts, else_sstmts) -> (ensure_valid_return if_sstmts) && (ensure_valid_return else_sstmts)
+                | SIf (_, if_sstmts, else_sstmts) -> (ensure_valid_return if_sstmts) && (ensure_valid_return else_sstmts)
                 | SIterLoop (_, _, _, _, block_sstmts) -> let _ = ensure_valid_return block_sstmts in false
                 | _ -> false
         ) false block in
