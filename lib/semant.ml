@@ -21,161 +21,145 @@ let none_assignment_err = "cannot assign to none"
 let none_return_err = "function with non-none return type does not return anything"
 let nonguaranteed_return_err = "function is not guaranteed to return"
 let reserved_function_name_err = "function names \"main\" and \"say\" are reserved"
-let return_in_global_err = "cannot return outside a function"
 let return_in_none_err = "function that returns none cannot have return statement"
 let unimplemented_err = "unimplemented"
 
 let check (binds, funcs, stmts): sprogram =
-  if List.exists (fun fn -> fn.fname = "main" || fn.fname = "say") funcs then raise (Failure reserved_function_name_err)
-  else let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}] in 
 
-  let default_capacity = 10 in
-  (* 
-     all_funcs contains all function definitions 
-     name -> (params, rtype)
-  *)
-  let all_funcs = Hashtbl.create default_capacity in
-  let _  = Hashtbl.add all_funcs "say" ([Any, "value"], None);
-      {
-        sfname = "say";
-        sparams = [Any, "value"];
-        srtype = None;
-        sbody = [];
-      }
-  in
-
-  (* 
-     all_scope is a list of hashtables, with each table representing a scope 
-     list of (name -> dtype)
-  *)
-  let all_scopes = ref [Hashtbl.create default_capacity] in
-  let is_checking_func = ref false in
-
-  (**** Check global variables ****)
+  (**** Global variables ****)
+  let globals = Hashtbl.create 10 in
   List.iter (
     fun (typ, name) -> 
-      let scope = List.hd !all_scopes in 
-      if Hashtbl.mem scope name then raise (Failure duplicate_id_err)
-      else Hashtbl.add scope name typ
+      if Hashtbl.mem globals name then raise (Failure duplicate_id_err)
+      else Hashtbl.add globals name typ
   ) binds;
-
-  let rec check_expr = function
-      NumberLit num -> (Number, SNumberLit num)
-    | BoolLit bl -> (Bool, SBoolLit bl)
-    | CharLit chr -> (Char, SCharLit chr)
-    | StringLit str -> (String, SStringLit str)
-    | Id id -> (
-        match List.find_opt (fun scope -> Hashtbl.mem scope id) !all_scopes with
-            Some scope -> (Hashtbl.find scope id, SId id)
-          | None -> raise (Failure missing_id_err)
-      )
-    | Binop (exp1, op, exp2) -> 
-        let sexpr1 = check_expr exp1 in let dtype1 = fst sexpr1 in
-        let sexpr2 = check_expr exp2 in let dtype2 = fst sexpr2 in
-        if dtype1 != dtype2 then raise (Failure mismatched_bop_args_err)
-        else let res_type = (
-          match op with 
-              (Plus | Minus | Times | IntDiv | Div | Mod) when dtype1 = Number -> Number
-            | (Eq | Neq | Less | Leq | Greater | Geq) when dtype1 = Number -> Bool
-            | (And | Or) when dtype1 = Bool -> Bool
-            | _ -> raise (Failure invalid_bop_args_err)
-        ) in
-        (res_type, SBinop (sexpr1, op, sexpr2))
-    | Unop (op, exp) ->
-        let sexpr' = check_expr exp in let dtype' = fst sexpr' in
-        let res_type = (
-          match op with
-              Not when dtype' = Bool -> Bool
-            | Neg when dtype' = Number -> Number
-            | _ -> raise (Failure invalid_unop_args_err)
-        ) in
-        (res_type, SUnop (op, sexpr'))
-    | Call (id, passed_params) -> 
-        let (fn_params, fn_rtype) = 
-          if not (Hashtbl.mem all_funcs id) then raise (Failure (missing_func_err ^ " (" ^ id ^ ")"))
-          else Hashtbl.find all_funcs id in 
-        if List.length passed_params != List.length fn_params then raise (Failure mismatched_func_args_err)
-        else if List.exists2 (
-          fun passed_param fn_param -> let (passed_dtype, _) = check_expr passed_param 
-          in passed_dtype != fst fn_param && not (fst fn_param = Any)
-        ) passed_params fn_params then raise (Failure mismatched_func_args_err)
-        else (fn_rtype, SCall (id, List.map check_expr passed_params))
-    | Elem _ -> raise (Failure unimplemented_err)
-
-  in
-  let rec check_stmt = function
-      Expr exp -> SExpr (check_expr exp)
-    | Assign (typ, id, exp) -> 
-        let sexpr' = check_expr exp in 
-        if fst sexpr' = None then raise (Failure none_assignment_err)
-        else if fst sexpr' != typ then raise (Failure invalid_assignment_err)
-        else
-          let curr_scope = List.hd !all_scopes in
-          if Hashtbl.mem curr_scope id then
-            let prev_dtype = Hashtbl.find curr_scope id in
-            if prev_dtype != typ then raise (Failure invalid_assignment_err)
-            else SReassign (id, sexpr')
-          else let _ = Hashtbl.add curr_scope id (fst sexpr') in SInit (id, sexpr')
-    | InferAssign (id, exp) -> 
-        let sexpr' = check_expr exp in 
-        let curr_dtype = fst sexpr' in
-        if curr_dtype = None then raise (Failure none_assignment_err)
-        else
-          let sc = List.find_opt (fun scope -> Hashtbl.mem scope id) !all_scopes in (
-            match sc with 
-                Some scope -> 
-                  let prev_dtype = Hashtbl.find scope id in
-                  if prev_dtype != curr_dtype then raise (Failure invalid_assignment_err)
-                  else SReassign (id, sexpr')
-              | None -> Hashtbl.add (List.hd !all_scopes) id (fst sexpr'); SInit (id, sexpr')
-          )
-    | Alloc _ -> raise (Failure unimplemented_err)
-    | AllocAssign _ -> raise (Failure unimplemented_err)
-    | AllocInferAssign _ -> raise (Failure unimplemented_err)
-    | If (prd, block) -> 
-        let prd_sexpr = check_expr prd in
-        if fst prd_sexpr != Bool then raise (Failure invalid_if_err)
-        else
-          let block_sstmts = check_block (Hashtbl.create default_capacity) block in
-          SIf (prd_sexpr, block_sstmts)
-    | IfElse (prd, if_block, else_block) -> 
-        let prd_sexpr = check_expr prd in
-        if fst prd_sexpr != Bool then raise (Failure invalid_if_err)
-        else 
-          let if_sstmts = check_block (Hashtbl.create default_capacity) if_block in
-          let else_sstmts = check_block (Hashtbl.create default_capacity) else_block in
-          SIfElse (prd_sexpr, if_sstmts, else_sstmts)
-    | IterLoop (id, st, en, by, loop_block) -> 
-        let start_sexpr = check_expr st in
-        let end_sexpr = check_expr en in
-        let by_sexpr = check_expr by in 
-        if fst start_sexpr != Number || fst end_sexpr != Number || fst by_sexpr != Number then raise (Failure invalid_iter_loop_err)
-        else 
-          let block_scope = Hashtbl.create default_capacity in
-          let _ = Hashtbl.add block_scope id Number in
-          let block_sstmts = check_block block_scope loop_block in
-          SIterLoop (id, start_sexpr, end_sexpr, by_sexpr, block_sstmts)
-    | CondLoop (prd, block) ->
-        let prd_sexpr = check_expr prd in
-        if fst prd_sexpr != Bool then raise (Failure invalid_cond_loop_err)
-        else
-          let block_sstmts = check_block (Hashtbl.create default_capacity) block in
-          SCondLoop (prd_sexpr, block_sstmts)
-    | Return exp -> if not !is_checking_func then raise (Failure return_in_global_err) else SReturn (check_expr exp)
-    | Continue -> SContinue (* TODO implement (only valid in loops) *)
-    | Stop -> SStop         (* TODO implement (only valid it loops) *)
-  and check_block scope block = 
-    let _ = all_scopes := scope::(!all_scopes) in
-    let res = List.map check_stmt block in
-    let _ = all_scopes := List.tl (!all_scopes)
-    in res
   
+  (**** Check for reserved functions ****)
+  let sfuncs = Hashtbl.create 10 in
+  if List.exists (fun fn -> fn.fname = "main" || fn.fname = "say") funcs then raise (Failure reserved_function_name_err)
+  else (
+    Hashtbl.add sfuncs "say" ([(Any, "arg")], None)
+  );
+  let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}]
   in
+
   let check_func fn = 
-    if Hashtbl.mem all_funcs fn.fname || Hashtbl.mem (List.hd !all_scopes) fn.fname then raise (Failure duplicate_func_err)
+    let scopes = ref [globals] in
+    let rec check_expr = function
+        NumberLit num -> (Number, SNumberLit num)
+      | BoolLit bl -> (Bool, SBoolLit bl)
+      | CharLit chr -> (Char, SCharLit chr)
+      | StringLit str -> (String, SStringLit str)
+      | Id id -> (
+          match List.find_opt (fun scope -> Hashtbl.mem scope id) !scopes with
+              Some scope -> (Hashtbl.find scope id, SId id)
+            | None -> raise (Failure missing_id_err)
+        )
+      | Binop (exp1, op, exp2) -> 
+          let sexpr1 = check_expr exp1 in let dtype1 = fst sexpr1 in
+          let sexpr2 = check_expr exp2 in let dtype2 = fst sexpr2 in
+          if dtype1 != dtype2 then raise (Failure mismatched_bop_args_err)
+          else let res_type = (
+            match op with 
+                (Plus | Minus | Times | IntDiv | Div | Mod) when dtype1 = Number -> Number
+              | (Eq | Neq | Less | Leq | Greater | Geq) when dtype1 = Number -> Bool
+              | (And | Or) when dtype1 = Bool -> Bool
+              | _ -> raise (Failure invalid_bop_args_err)
+          ) in
+          (res_type, SBinop (sexpr1, op, sexpr2))
+      | Unop (op, exp) ->
+          let sexpr' = check_expr exp in let dtype' = fst sexpr' in
+          let res_type = (
+            match op with
+                Not when dtype' = Bool -> Bool
+              | Neg when dtype' = Number -> Number
+              | _ -> raise (Failure invalid_unop_args_err)
+          ) in
+          (res_type, SUnop (op, sexpr'))
+      | Call (id, passed_params) -> 
+          let (fn_params, fn_rtype) = 
+            if not (Hashtbl.mem sfuncs id) then raise (Failure (missing_func_err ^ " (" ^ id ^ ")"))
+            else Hashtbl.find sfuncs id in 
+          if List.length passed_params != List.length fn_params then raise (Failure mismatched_func_args_err)
+          else if List.exists2 (
+            fun passed_param fn_param -> let (passed_dtype, _) = check_expr passed_param 
+            in passed_dtype != fst fn_param && not (fst fn_param = Any)
+          ) passed_params fn_params then raise (Failure mismatched_func_args_err)
+          else (fn_rtype, SCall (id, List.map check_expr passed_params))
+      | Elem _ -> raise (Failure unimplemented_err)
+
+    in
+    let rec check_stmt = function
+        Expr exp -> SExpr (check_expr exp)
+      | Assign (typ, id, exp) -> 
+          let sexpr' = check_expr exp in 
+          if fst sexpr' = None then raise (Failure none_assignment_err)
+          else if fst sexpr' != typ then raise (Failure invalid_assignment_err)
+          else
+            let curr_scope = List.hd !scopes in
+            if Hashtbl.mem curr_scope id then
+              let prev_dtype = Hashtbl.find curr_scope id in
+              if prev_dtype != typ then raise (Failure invalid_assignment_err)
+              else SReassign (id, sexpr')
+            else let _ = Hashtbl.add curr_scope id (fst sexpr') in SInit (id, sexpr')
+      | InferAssign (id, exp) -> 
+          let sexpr' = check_expr exp in 
+          let curr_dtype = fst sexpr' in
+          if curr_dtype = None then raise (Failure none_assignment_err)
+          else
+            let sc = List.find_opt (fun scope -> Hashtbl.mem scope id) !scopes in (
+              match sc with 
+                  Some scope -> 
+                    let prev_dtype = Hashtbl.find scope id in
+                    if prev_dtype != curr_dtype then raise (Failure invalid_assignment_err)
+                    else SReassign (id, sexpr')
+                | None -> Hashtbl.add (List.hd !scopes) id (fst sexpr'); SInit (id, sexpr')
+            )
+      | Alloc _ -> raise (Failure unimplemented_err)
+      | AllocAssign _ -> raise (Failure unimplemented_err)
+      | AllocInferAssign _ -> raise (Failure unimplemented_err)
+      | If (prd, block) -> 
+          let prd_sexpr = check_expr prd in
+          if fst prd_sexpr != Bool then raise (Failure invalid_if_err)
+          else
+            let block_sstmts = check_block (Hashtbl.create 10) block in
+            SIf (prd_sexpr, block_sstmts)
+      | IfElse (prd, if_block, else_block) -> 
+          let prd_sexpr = check_expr prd in
+          if fst prd_sexpr != Bool then raise (Failure invalid_if_err)
+          else 
+            let if_sstmts = check_block (Hashtbl.create 10) if_block in
+            let else_sstmts = check_block (Hashtbl.create 10) else_block in
+            SIfElse (prd_sexpr, if_sstmts, else_sstmts)
+      | IterLoop (id, st, en, by, loop_block) -> 
+          let start_sexpr = check_expr st in
+          let end_sexpr = check_expr en in
+          let by_sexpr = check_expr by in 
+          if fst start_sexpr != Number || fst end_sexpr != Number || fst by_sexpr != Number then raise (Failure invalid_iter_loop_err)
+          else 
+            let block_scope = Hashtbl.create 10 in
+            let _ = Hashtbl.add block_scope id Number in
+            let block_sstmts = check_block block_scope loop_block in
+            SIterLoop (id, start_sexpr, end_sexpr, by_sexpr, block_sstmts)
+      | CondLoop (prd, block) ->
+          let prd_sexpr = check_expr prd in
+          if fst prd_sexpr != Bool then raise (Failure invalid_cond_loop_err)
+          else
+            let block_sstmts = check_block (Hashtbl.create 10) block in
+            SCondLoop (prd_sexpr, block_sstmts)
+      | Return exp -> SReturn (check_expr exp)
+      | Continue -> SContinue (* TODO implement (only valid in loops) *)
+      | Stop -> SStop         (* TODO implement (only valid it loops) *)
+    and check_block scope block = 
+      let _ = scopes := scope::(!scopes) in
+      let res = List.map check_stmt block in
+      let _ = scopes := List.tl (!scopes)
+      in res
+    in
+
+    if Hashtbl.mem sfuncs fn.fname || Hashtbl.mem (List.hd !scopes) fn.fname then raise (Failure duplicate_func_err)
     else
-      let _ = is_checking_func := true in
-      let body_scope = Hashtbl.create default_capacity in
+      let body_scope = Hashtbl.create 10 in
       let _ = List.iter (
         fun (p_dtype, p_name) -> 
           if Hashtbl.mem body_scope p_name then raise (Failure duplicate_param_name_err)
@@ -200,8 +184,7 @@ let check (binds, funcs, stmts): sprogram =
         ) false block in
       let has_valid_return = ensure_valid_return body_sstmts in
       if not has_valid_return && fn.rtype != None then raise (Failure nonguaranteed_return_err)
-      else let _ = is_checking_func := false in
-      Hashtbl.add all_funcs fn.fname (fn.params, fn.rtype);
+      else Hashtbl.add sfuncs fn.fname (fn.params, fn.rtype);
       {
         sfname = fn.fname;
         sparams = fn.params;
