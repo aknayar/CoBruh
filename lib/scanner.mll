@@ -23,7 +23,7 @@
   let dedent_to_zero () = make_dedent_list !curr_scope
 
   (* should be called on tokens that may appear at start of line *)
-  let make_token_list token = 
+  let push token = 
     if !is_start_of_line then (
       is_start_of_line := false;
       let new_scope = get_scope () in
@@ -53,61 +53,61 @@ rule token = parse
 | '#'       { comment lexbuf } (* comment *)
 
 (* Symbols *)
-| '(' { make_token_list LPAREN }
-| ')' { [RPAREN] }
-| '[' { [LSQUARE] }
-| ']' { [RSQUARE] }
-| ',' { [COMMA] }
-| ':' { [COLON] }
-| '|' { make_token_list PIPE }
+| '(' { push LPAREN }
+| ')' { push RPAREN }
+| '[' { push LSQUARE }
+| ']' { push RSQUARE }
+| ',' { push COMMA }
+| ':' { push COLON }
+| '|' { push PIPE }
 
 (* Operators *)
-| "is"  { [ASSIGN] }
-| '+'   { [PLUS] }
-| '-'   { [MINUS] }
-| '*'   { [TIMES] }
-| "//"  { [INTDIV] }
-| '/'   { [DIV] }
-| '%'   { [MOD] }
-| "=="  { [EQ] }
-| "=/=" { [NEQ] }
-| '<'   { [LT] }
-| "<="  { [LEQ] }
-| '>'   { [GT] }
-| ">="  { [GEQ] }
-| "and" { [AND] }
-| "or"  { [OR] }
-| "not" { [NOT] }
+| "is"  { push ASSIGN }
+| '+'   { push PLUS }
+| '-'   { push MINUS }
+| '*'   { push TIMES }
+| "//"  { push INTDIV }
+| '/'   { push DIV }
+| '%'   { push MOD }
+| "=="  { push EQ }
+| "=/=" { push NEQ }
+| '<'   { push LT }
+| "<="  { push LEQ }
+| '>'   { push GT }
+| ">="  { push GEQ }
+| "and" { push AND }
+| "or"  { push OR }
+| "not" { push NOT }
 
 (* Branching *)
-| "if"       { make_token_list IF }
-| "else"     { make_token_list ELSE }
-| "loop"     { make_token_list LOOP }
-| "in"       { [IN] }
-| "to"       { [TO] }
-| "by"       { [BY] }
-| "continue" { make_token_list CONTINUE }
-| "stop"     { make_token_list STOP }
+| "if"       { push IF }
+| "else"     { push ELSE }
+| "loop"     { push LOOP }
+| "in"       { push IN }
+| "to"       { push TO }
+| "by"       { push BY }
+| "continue" { push CONTINUE }
+| "stop"     { push STOP }
 
 (* Functions *)
-| "define" { make_token_list DEFINE }
-| "none"   { [NONE] }
-| "->"     { [GIVES] }
-| "return" { make_token_list RETURN }
+| "define" { push DEFINE }
+| "none"   { push NONE }
+| "->"     { push GIVES }
+| "return" { push RETURN }
 
 (* Data Types *)
-| "number"    { make_token_list NUMBER }
-| "boolean"   { make_token_list BOOL }
-| "character" { make_token_list CHAR }
-| "string"    { make_token_list STRING }
+| "number"    { push NUMBER }
+| "boolean"   { push BOOL }
+| "character" { push CHAR }
+| "string"    { push STRING }
 
 (* Literals *)
-| number as lex    { make_token_list (NUMBERLIT (float_of_string lex)) }
-| "true"           { make_token_list (BOOLLIT true) }
-| "false"          { make_token_list (BOOLLIT false) }
-| character as lex { make_token_list (CHARLIT lex.[1]) }
-| string as lex    { make_token_list (STRINGLIT (String.sub lex 1 (String.length lex - 2))) }
-| id as lex        { make_token_list (ID lex) }
+| number as lex    { push (NUMBERLIT (float_of_string lex)) }
+| "true"           { push (BOOLLIT true) }
+| "false"          { push (BOOLLIT false) }
+| character as lex { push (CHARLIT lex.[1]) }
+| string as lex    { push (STRINGLIT (String.sub lex 1 (String.length lex - 2))) }
+| id as lex        { push (ID lex) }
 
 | eof         { if not !is_start_of_line then EOL::(dedent_to_zero () @ [EOF]) else dedent_to_zero () @ [EOF] }
 | ('"' | ''') { raise (Failure(mismatched_quote_err)) }
