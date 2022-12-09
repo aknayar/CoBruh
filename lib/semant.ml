@@ -118,13 +118,7 @@ let check (binds, funcs, stmts): sprogram =
       | Alloc _ -> raise (Failure unimplemented_err)
       | AllocAssign _ -> raise (Failure unimplemented_err)
       | AllocInferAssign _ -> raise (Failure unimplemented_err)
-      | If (prd, block) -> 
-          let prd_sexpr = check_expr prd in
-          if fst prd_sexpr != Bool then raise (Failure invalid_if_err)
-          else
-            let block_sstmts = check_block (Hashtbl.create 10) block in
-            SIf (prd_sexpr, block_sstmts)
-      | IfElse (prd, if_block, else_block) -> 
+      | If (prd, if_block, else_block) -> 
           let prd_sexpr = check_expr prd in
           if fst prd_sexpr != Bool then raise (Failure invalid_if_err)
           else 
