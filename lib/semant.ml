@@ -2,7 +2,6 @@ open Ast
 open Sast
 
 let dangling_code_err = "code cannot appear after return"
-let dangling_stmt_err = "dangling statements cannot be present if a main method is defined"
 let duplicate_id_err = "variable name already exists in scope"
 let duplicate_func_err = "function name already exists"
 let duplicate_param_name_err = "function parameters must have unique names"
