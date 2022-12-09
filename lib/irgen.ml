@@ -44,17 +44,8 @@ let translate (binds, sfuncs): L.llmodule =
     in List.fold_left add_func StringMap.empty sfuncs
   in
 
-  let function_decls : (L.llvalue * sfunc) StringMap.t =
-    let func_decl m func =
-      let name = func.sfname
-      and param_types = 
-        Array.of_list (List.map (fun (t,_) -> lltype_of_dtype t) func.sparams)
-            in let ftype = L.function_type (lltype_of_dtype func.srtype) param_types in
-            StringMap.add name (L.define_function name ftype mdl, func) m in
-          List.fold_left func_decl StringMap.empty sfuncs in
-
   let build_func_body fn = 
-    let (the_func, _) = StringMap.find fn.sfname function_decls in
+    let (the_func, _) = StringMap.find fn.sfname all_funcs in
     let rec build_expr builder (_, exp) = match exp with
         SNumberLit n -> L.const_float f_t n
       | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
