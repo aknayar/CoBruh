@@ -2,6 +2,7 @@ open Ast
 open Sast
 
 let dangling_code_err = "code cannot appear after return"
+let dangling_stmt_err = "dangling statements cannot be present if a main method is defined"
 let duplicate_id_err = "variable name already exists in scope"
 let duplicate_func_err = "function name already exists"
 let duplicate_param_name_err = "function parameters must have unique names"
@@ -20,19 +21,31 @@ let missing_return_err = "missing return statement"
 let none_assignment_err = "cannot assign to none"
 let none_return_err = "function with non-none return type does not return anything"
 let nonguaranteed_return_err = "function is not guaranteed to return"
+let reserved_function_main_err = "function name \"main\" is reserved"
+let reserved_function_say_err = "function name \"say\" is reserved"
 let return_in_global_err = "cannot return outside a function"
 let return_in_none_err = "function that returns none cannot have return statement"
 let unimplemented_err = "unimplemented"
 
 let check (binds, funcs, stmts): sprogram =
-  let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}] in 
-  
+  if List.fold_left (||) false (List.map (fun x -> x.fname = "main") funcs) then raise (Failure reserved_function_main_err)
+  else let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}] in 
+
   let default_capacity = 10 in
   (* 
      all_funcs contains all function definitions 
      name -> (params, rtype)
   *)
   let all_funcs = Hashtbl.create default_capacity in
+  let _  = Hashtbl.add all_funcs "say" ([Any, "value"], None);
+      {
+        sfname = "say";
+        sparams = [Any, "value"];
+        srtype = None;
+        sbody = [];
+      }
+  in
+
   (* 
      all_scope is a list of hashtables, with each table representing a scope 
      list of (name -> dtype)
@@ -86,7 +99,7 @@ let check (binds, funcs, stmts): sprogram =
         if List.length passed_params != List.length fn_params then raise (Failure mismatched_func_args_err)
         else if List.exists2 (
           fun passed_param fn_param -> let (passed_dtype, _) = check_expr passed_param 
-          in passed_dtype != fst fn_param
+          in passed_dtype != fst fn_param && not (fst fn_param = Any)
         ) passed_params fn_params then raise (Failure mismatched_func_args_err)
         else (fn_rtype, SCall (id, List.map check_expr passed_params))
     | Elem _ -> raise (Failure unimplemented_err)
@@ -162,7 +175,8 @@ let check (binds, funcs, stmts): sprogram =
   
   in
   let check_func fn = 
-    if Hashtbl.mem all_funcs fn.fname || Hashtbl.mem (List.hd !all_scopes) fn.fname then raise (Failure duplicate_func_err)
+    if fn.fname = "say" then raise (Failure reserved_function_say_err)
+    else if Hashtbl.mem all_funcs fn.fname || Hashtbl.mem (List.hd !all_scopes) fn.fname then raise (Failure duplicate_func_err)
     else
       let _ = is_checking_func := true in
       let body_scope = Hashtbl.create default_capacity in

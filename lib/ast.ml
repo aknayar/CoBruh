@@ -4,6 +4,7 @@ type dtype =
   | Char 
   | String 
   | None
+  | Any
 
 type bop = 
     Plus 
@@ -83,6 +84,7 @@ let string_of_dtype = function
   | Char -> "character"
   | String -> "string"
   | None -> "none"
+  | Any -> "any"
 
 let string_of_bop = function
     Plus -> "+"
