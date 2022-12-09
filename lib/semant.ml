@@ -20,14 +20,13 @@ let missing_return_err = "missing return statement"
 let none_assignment_err = "cannot assign to none"
 let none_return_err = "function with non-none return type does not return anything"
 let nonguaranteed_return_err = "function is not guaranteed to return"
-let reserved_function_main_err = "function name \"main\" is reserved"
-let reserved_function_say_err = "function name \"say\" is reserved"
+let reserved_function_name_err = "function names \"main\" and \"say\" are reserved"
 let return_in_global_err = "cannot return outside a function"
 let return_in_none_err = "function that returns none cannot have return statement"
 let unimplemented_err = "unimplemented"
 
 let check (binds, funcs, stmts): sprogram =
-  if List.fold_left (||) false (List.map (fun x -> x.fname = "main") funcs) then raise (Failure reserved_function_main_err)
+  if List.exists (fun fn -> fn.fname = "main" || fn.fname = "say") funcs then raise (Failure reserved_function_name_err)
   else let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}] in 
 
   let default_capacity = 10 in
@@ -174,8 +173,7 @@ let check (binds, funcs, stmts): sprogram =
   
   in
   let check_func fn = 
-    if fn.fname = "say" then raise (Failure reserved_function_say_err)
-    else if Hashtbl.mem all_funcs fn.fname || Hashtbl.mem (List.hd !all_scopes) fn.fname then raise (Failure duplicate_func_err)
+    if Hashtbl.mem all_funcs fn.fname || Hashtbl.mem (List.hd !all_scopes) fn.fname then raise (Failure duplicate_func_err)
     else
       let _ = is_checking_func := true in
       let body_scope = Hashtbl.create default_capacity in
