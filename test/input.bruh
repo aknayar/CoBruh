@@ -24,12 +24,12 @@ define call(number x -> number):
   baz()
   return foo(a)
 
-
 number b # order of vdecl and fdecl does not matter as long as main comes after
 
 boolean c is bar(1)
 baz()
 call(100)
+say(100 * 5)
 # newname is baz()
 # number a is baz()
 # none a is baz()
