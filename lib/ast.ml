@@ -45,8 +45,7 @@ type stmt =
   | Alloc of dtype * string * expr
   | AllocAssign of dtype * string * expr * expr list
   | AllocInferAssign of string * expr * expr list
-  | If of expr * stmt list
-  | IfElse of expr * stmt list * stmt list
+  | If of expr * stmt list * stmt list
   | IterLoop of string * expr * expr * expr * stmt list
   | CondLoop of expr * stmt list
   | Return of expr
@@ -124,13 +123,7 @@ let rec string_of_stmt s =
   | AllocAssign (t, id, n, a) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^ "] is [" ^ String.concat ", " (List.map string_of_expr a) ^ "].\n"
   | AllocInferAssign (id, n, a) -> id ^ "[" ^ string_of_expr n ^ "]" ^ " is [" ^  String.concat ", " (List.map string_of_expr a) ^ "].\n"
   | Expr ex -> string_of_expr ex ^ ".\n"
-  | If (e, s) ->
-      let if_str = "if " ^ string_of_expr e ^ ":\n" in
-      let _  = curr_indent_level := !curr_indent_level + 1 in
-      let if_stmts = String.concat "" (List.map string_of_stmt s) in
-      let _  = curr_indent_level := !curr_indent_level - 1 in 
-      if_str ^ if_stmts
-  | IfElse (e, s1, s2) ->
+  | If (e, s1, s2) ->
       let if_str = "if " ^ string_of_expr e ^ ":\n" in
       let _  = curr_indent_level := !curr_indent_level + 1 in
       let if_stmts = String.concat "" (List.map string_of_stmt s1) in

@@ -44,7 +44,17 @@ let translate (binds, sfuncs): L.llmodule =
     in List.fold_left add_func StringMap.empty sfuncs
   in
 
+  let function_decls : (L.llvalue * sfunc) StringMap.t =
+    let func_decl m func =
+      let name = func.sfname
+      and param_types = 
+        Array.of_list (List.map (fun (t,_) -> lltype_of_dtype t) func.sparams)
+            in let ftype = L.function_type (lltype_of_dtype func.srtype) param_types in
+            StringMap.add name (L.define_function name ftype mdl, func) m in
+          List.fold_left func_decl StringMap.empty sfuncs in
+
   let build_func_body fn = 
+    let (the_func, _) = StringMap.find fn.sfname function_decls in
     let rec build_expr builder (_, exp) = match exp with
         SNumberLit n -> L.const_float f_t n
       | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
@@ -76,13 +86,30 @@ let translate (binds, sfuncs): L.llmodule =
         | None -> ignore (instr builder)
     in
 
-    let build_stmt sc builder = function
+    let rec build_stmt sc builder = function
         SExpr sexp -> ignore (build_expr builder sexp); builder
       | SInit (id, sexp) -> 
           let local = L.build_alloca (lltype_of_dtype (fst sexp)) id builder
           in Hashtbl.add sc id local;
           let sexp' = build_expr builder sexp in
           ignore (L.build_store sexp' local builder); builder
+      | SIfElse (prd, if_block, else_block) ->
+          let bool_val = build_expr builder prd in
+          let merge_bb = L.append_block context "merge" the_func in
+          let build_br_merge = L.build_br merge_bb in (* partial function *)
+
+          let then_bb = L.append_block context "then" the_func in
+          add_terminal (List.fold_left (
+            fun b s -> build_stmt  sc b s
+          ) (L.builder_at_end context then_bb) if_block) build_br_merge;
+
+          let else_bb = L.append_block context "else" the_func in
+          add_terminal (List.fold_left (
+            fun b s -> build_stmt  sc b s
+          ) (L.builder_at_end context else_bb) else_block) build_br_merge;
+
+          ignore(L.build_cond_br bool_val then_bb else_bb builder);
+          L.builder_at_end context merge_bb
       | _ -> raise (Failure "unimplemented")
     in
     
