@@ -84,7 +84,7 @@ let translate (binds, sfuncs): L.llmodule =
           in Hashtbl.add sc id local;
           let sexp' = build_expr builder sexp in
           ignore (L.build_store sexp' local builder); builder
-      | SIfElse (prd, if_block, else_block) ->
+      | SIf (prd, if_block, else_block) ->
           let bool_val = build_expr builder prd in
           let merge_bb = L.append_block context "merge" the_func in
           let build_br_merge = L.build_br merge_bb in (* partial function *)

@@ -19,8 +19,7 @@ type sstmt =
   | SAlloc of dtype * string * sexpr
   | SAllocAssign of dtype * string * sexpr * sexpr list
   | SAllocInferAssign of string * sexpr * sexpr list
-  | SIf of sexpr * sstmt list
-  | SIfElse of sexpr * sstmt list * sstmt list
+  | SIf of sexpr * sstmt list * sstmt list
   | SIterLoop of string * sexpr * sexpr * sexpr * sstmt list
   | SCondLoop of sexpr * sstmt list
   | SReturn of sexpr
