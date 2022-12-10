@@ -31,10 +31,16 @@ let translate (binds, sfuncs): L.llmodule =
     in List.fold_left add_global StringMap.empty binds
   in
 
-  let printf_t : L.lltype =
-    L.var_arg_function_type f_t [| L.pointer_type i8_t |] in
-  let printf_func : L.llvalue =
-    L.declare_function "printf" printf_t mdl in
+  let printf_t : L.lltype = L.var_arg_function_type f_t [| L.pointer_type i8_t |] in
+  let printf_func : L.llvalue = L.declare_function "printf" printf_t mdl in
+  let format_string_of_dtype typ = ( 
+    match typ with
+        Number -> "%f"
+      | Bool -> "%B"
+      | Char -> "%c"
+      | String -> "%s"
+      | _ -> raise (Failure "unimplemented")
+  ) ^ "\n" in
 
   let all_funcs =
     let add_func m fn =
@@ -65,9 +71,7 @@ let translate (binds, sfuncs): L.llmodule =
               | Less    -> L.build_icmp L.Icmp.Slt
               | _         -> raise (Failure "unimplemented")
           ) e1' e2' "tmp" builder
-      | SCall ("say", [e]) ->
-          let num_format_str = L.build_global_stringptr "%g\n" "fmt" builder in
-          L.build_call printf_func [| num_format_str ; (build_expr builder e) |] "printf" builder
+      | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) ; (build_expr builder e) |] "printf" builder
       | _ -> raise (Failure "unimplemented")
     in
 
