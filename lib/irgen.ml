@@ -143,7 +143,26 @@ let translate (binds, sfuncs): L.llmodule =
           let merge_bb = L.append_block context "merge" the_func in
           ignore(L.build_cond_br bool_val block_bb merge_bb pred_builder);
           L.builder_at_end context merge_bb
-      | _ -> raise (Failure "unimplemented")
+      | SIterLoop (id, st, en, by, block) ->
+          let prd_bb = L.append_block context "loop" the_func in
+          ignore(L.build_br prd_bb builder);
+          let new_table = Hashtbl.create 1 in
+          let iter = L.build_alloca (lltype_of_dtype (fst st)) id builder
+          in Hashtbl.add new_table id local;
+          let curr_scope = 0 in (* to be replaced *)
+          block = block::[SReassign(SId(id, curr_scope), (Number, SBinop(SId(id, curr_scope), Plus, by)))] in 
+          (* ignore(build_stmt Init(id, st)) in *)
+      
+          let block_bb = L.append_block context "loop_block" the_func in
+          add_terminal (do_block (Hashtbl.create (List.length block)) block_bb block) (L.build_br prd_bb);
+      
+          let pred_builder = L.builder_at_end context prd_bb in
+          let prd = Bool, SBinop((Number, SId(id, curr_scope)), Less, en) in
+          let bool_val = build_expr pred_builder prd in
+      
+          let merge_bb = L.append_block context "merge" the_func in
+          ignore(L.build_cond_br bool_val block_bb merge_bb pred_builder);
+          L.builder_at_end context merge_bb
     and do_block scope bb block = 
       scopes := scope::(!scopes);
       let res = List.fold_left build_stmt (L.builder_at_end context bb) block in
