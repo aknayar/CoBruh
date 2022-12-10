@@ -33,14 +33,6 @@ let translate (binds, sfuncs): L.llmodule =
 
   let printf_t : L.lltype = L.var_arg_function_type f_t [| L.pointer_type i8_t |] in
   let printf_func : L.llvalue = L.declare_function "printf" printf_t mdl in
-  let format_string_of_dtype typ = ( 
-    match typ with
-        Number -> "%f"
-      | Bool -> "%B"
-      | Char -> "%c"
-      | String -> "%s"
-      | _ -> raise (Failure "unimplemented")
-  ) ^ "\n" in
 
   let all_funcs =
     let add_func m fn =
@@ -52,6 +44,21 @@ let translate (binds, sfuncs): L.llmodule =
 
   let build_func_body fn = 
     let (the_func, _) = StringMap.find fn.sfname all_funcs in
+    let builder = L.builder_at_end context (L.entry_block the_func) in
+
+    let number_format = L.build_global_stringptr "%f\n" "fmt" builder
+    and bool_format = L.build_global_stringptr "%B\n" "fmt" builder
+    and char_format = L.build_global_stringptr "%c\n" "fmt" builder
+    and string_format = L.build_global_stringptr "%s\n" "fmt" builder in
+    let format_string_of_dtype typ = ( 
+      match typ with
+          Number -> number_format
+        | Bool -> bool_format
+        | Char -> char_format
+        | String -> string_format
+        | _ -> raise (Failure "unimplemented")
+    ) in
+
     let rec build_expr builder (_, exp) = match exp with
         SNumberLit n -> L.const_float f_t n
       | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
@@ -124,8 +131,6 @@ let translate (binds, sfuncs): L.llmodule =
     in
     
     let func_scope = ref [Hashtbl.create 10] in
-    let (the_func, _) = StringMap.find fn.sfname all_funcs in
-    let builder = L.builder_at_end context (L.entry_block the_func) in
     let builder = List.fold_left (
       fun b s -> build_stmt (List.hd !func_scope) b s
     ) builder fn.sbody in
