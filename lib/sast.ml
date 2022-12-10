@@ -6,7 +6,7 @@ and sx =
   | SBoolLit of bool
   | SCharLit of char
   | SStringLit of string
-  | SId of string
+  | SId of string * int
   | SBinop of sexpr * bop * sexpr
   | SUnop of uop * sexpr
   | SCall of string * sexpr list
@@ -15,7 +15,7 @@ and sx =
 type sstmt = 
     SExpr of sexpr
   | SInit of string * sexpr (* for initializing and assigning a variable *)
-  | SReassign of string * sexpr (* for reassigning an existing variable *)
+  | SReassign of string * int * sexpr (* for reassigning an existing variable *)
   | SAlloc of dtype * string * sexpr
   | SAllocAssign of dtype * string * sexpr * sexpr list
   | SAllocInferAssign of string * sexpr * sexpr list
