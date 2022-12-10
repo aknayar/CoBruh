@@ -1,4 +1,3 @@
-module StringMap = Map.Make(String)
 module L = Llvm
 
 open Ast
@@ -9,41 +8,43 @@ let translate (binds, sfuncs): L.llmodule =
   let mdl = L.create_module context "CoBruh" in
 
   let f_t = L.float_type context 
-  and i8_t = L.i8_type context 
   and i1_t = L.i1_type context 
+  and i8_t = L.i8_type context 
   and void_t = L.void_type context in
 
   let lltype_of_dtype = function
       Number -> f_t
     | Bool -> i1_t
+    | Char -> i8_t
+    (* string is special case *)
     | None -> void_t
     | _ -> raise (Failure "unimplemented") 
   in
 
-  let _ = 
-    let add_global m (typ, name) = 
-      let init = 
-        match typ with
-            Number -> L.const_float (lltype_of_dtype typ) 0.0
-          | Bool -> L.const_int (lltype_of_dtype typ) 0
-          | _ -> raise (Failure "unimplemented")
-      in StringMap.add name (L.define_global name init mdl) m 
-    in List.fold_left add_global StringMap.empty binds
-  in
+  let globals = Hashtbl.create (List.length binds) in
+  let add_global (typ, name) = 
+    let init = 
+      match typ with
+          Number -> L.const_float (lltype_of_dtype typ) 0.0
+        | Bool -> L.const_int (lltype_of_dtype typ) 0
+        | _ -> raise (Failure "unimplemented")
+    in Hashtbl.add globals name (L.define_global name init mdl)
+  in List.iter add_global binds;
 
   let printf_t : L.lltype = L.var_arg_function_type f_t [| L.pointer_type i8_t |] in
   let printf_func : L.llvalue = L.declare_function "printf" printf_t mdl in
 
-  let all_funcs =
-    let add_func m fn =
-      let param_dtypes = Array.of_list (List.map (fun (typ, _) -> lltype_of_dtype typ) fn.sparams) in
-      let ftype = L.function_type (lltype_of_dtype fn.srtype) param_dtypes in
-      StringMap.add fn.sfname (L.define_function fn.sfname ftype mdl, fn) m
-    in List.fold_left add_func StringMap.empty sfuncs
-  in
+  let all_funcs = Hashtbl.create (List.length sfuncs) in
+  let add_func fn =
+    let param_dtypes = Array.of_list (List.map (fun (typ, _) -> lltype_of_dtype typ) fn.sparams) in
+    let ftype = L.function_type (lltype_of_dtype fn.srtype) param_dtypes in
+    Hashtbl.add all_funcs fn.sfname (L.define_function fn.sfname ftype mdl, fn)
+  in List.iter add_func sfuncs;
 
   let build_func_body fn = 
-    let (the_func, _) = StringMap.find fn.sfname all_funcs in
+    let scopes = ref [globals] in
+
+    let (the_func, _) = Hashtbl.find all_funcs fn.sfname in
     let builder = L.builder_at_end context (L.entry_block the_func) in
 
     let number_format = L.build_global_stringptr "%f\n" "fmt" builder
@@ -58,6 +59,16 @@ let translate (binds, sfuncs): L.llmodule =
         | String -> string_format
         | _ -> raise (Failure "unimplemented")
     ) in
+
+    let body_scope = Hashtbl.create (List.length fn.sparams + List.length fn.sbody) in
+    let add_param (typ, name) param = 
+      L.set_value_name name param;
+      let local = L.build_alloca (lltype_of_dtype typ) name builder in
+      ignore (L.build_store param local builder);
+      Hashtbl.add body_scope name local
+    in List.iter2 add_param fn.sparams (Array.to_list (L.params the_func));
+
+    scopes := body_scope::(!scopes);
 
     let rec build_expr builder (_, exp) = match exp with
         SNumberLit n -> L.const_float f_t n
@@ -88,11 +99,11 @@ let translate (binds, sfuncs): L.llmodule =
         | None -> ignore (instr builder)
     in
 
-    let rec build_stmt sc builder = function
+    let rec build_stmt builder = function
         SExpr sexp -> ignore (build_expr builder sexp); builder
       | SInit (id, sexp) -> 
           let local = L.build_alloca (lltype_of_dtype (fst sexp)) id builder
-          in Hashtbl.add sc id local;
+          in Hashtbl.add (List.hd !scopes) id local;
           let sexp' = build_expr builder sexp in
           ignore (L.build_store sexp' local builder); builder
       | SIf (prd, if_block, else_block) ->
@@ -102,12 +113,12 @@ let translate (binds, sfuncs): L.llmodule =
 
           let then_bb = L.append_block context "then" the_func in
           add_terminal (List.fold_left (
-            fun b s -> build_stmt  sc b s
+            fun b s -> build_stmt b s
           ) (L.builder_at_end context then_bb) if_block) build_br_merge;
 
           let else_bb = L.append_block context "else" the_func in
           add_terminal (List.fold_left (
-            fun b s -> build_stmt  sc b s
+            fun b s -> build_stmt b s
           ) (L.builder_at_end context else_bb) else_block) build_br_merge;
 
           ignore(L.build_cond_br bool_val then_bb else_bb builder);
@@ -118,7 +129,7 @@ let translate (binds, sfuncs): L.llmodule =
       
           let block_bb = L.append_block context "loop_block" the_func in
           add_terminal (List.fold_left (
-            fun b s -> build_stmt  sc b s
+            fun b s -> build_stmt b s
           ) (L.builder_at_end context block_bb) block) (L.build_br prd_bb);
       
           let pred_builder = L.builder_at_end context prd_bb in
@@ -130,10 +141,7 @@ let translate (binds, sfuncs): L.llmodule =
       | _ -> raise (Failure "unimplemented")
     in
     
-    let func_scope = ref [Hashtbl.create 10] in
-    let builder = List.fold_left (
-      fun b s -> build_stmt (List.hd !func_scope) b s
-    ) builder fn.sbody in
+    let builder = List.fold_left build_stmt builder fn.sbody in
 
     add_terminal builder (
       match fn.srtype with

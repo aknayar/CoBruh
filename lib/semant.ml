@@ -27,7 +27,7 @@ let unimplemented_err = "unimplemented"
 let check (binds, funcs, stmts): sprogram =
 
   (**** Global variables ****)
-  let globals = Hashtbl.create 10 in
+  let globals = Hashtbl.create (List.length binds) in
   List.iter (
     fun (typ, name) -> 
       if Hashtbl.mem globals name then raise (Failure duplicate_id_err)
@@ -35,7 +35,7 @@ let check (binds, funcs, stmts): sprogram =
   ) binds;
   
   (**** Check for reserved functions ****)
-  let sfuncs = Hashtbl.create 10 in
+  let sfuncs = Hashtbl.create (List.length funcs + 2) in
   if List.exists (fun fn -> fn.fname = "main" || fn.fname = "say") funcs then raise (Failure reserved_function_name_err)
   else (
     Hashtbl.add sfuncs "say" ([(Any, "arg")], None)
@@ -44,7 +44,7 @@ let check (binds, funcs, stmts): sprogram =
   in
 
   let check_func fn = 
-    let scopes = ref [Hashtbl.create 10; globals] in
+    let scopes = ref [globals] in
     let rec check_expr = function
         NumberLit num -> (Number, SNumberLit num)
       | BoolLit bl -> (Bool, SBoolLit bl)
@@ -124,8 +124,8 @@ let check (binds, funcs, stmts): sprogram =
           let prd_sexpr = check_expr prd in
           if fst prd_sexpr != Bool then raise (Failure invalid_if_err)
           else 
-            let if_sstmts = check_block (Hashtbl.create 10) if_block in
-            let else_sstmts = check_block (Hashtbl.create 10) else_block in
+            let if_sstmts = check_block (Hashtbl.create (List.length if_block)) if_block in
+            let else_sstmts = check_block (Hashtbl.create (List.length else_block)) else_block in
             SIf (prd_sexpr, if_sstmts, else_sstmts)
       | IterLoop (id, st, en, by, loop_block) -> 
           let start_sexpr = check_expr st in
@@ -133,7 +133,7 @@ let check (binds, funcs, stmts): sprogram =
           let by_sexpr = check_expr by in 
           if fst start_sexpr != Number || fst end_sexpr != Number || fst by_sexpr != Number then raise (Failure invalid_iter_loop_err)
           else 
-            let block_scope = Hashtbl.create 10 in
+            let block_scope = Hashtbl.create (List.length loop_block + 1) in
             let _ = Hashtbl.add block_scope id Number in
             let block_sstmts = check_block block_scope loop_block in
             SIterLoop (id, start_sexpr, end_sexpr, by_sexpr, block_sstmts)
@@ -141,7 +141,7 @@ let check (binds, funcs, stmts): sprogram =
           let prd_sexpr = check_expr prd in
           if fst prd_sexpr != Bool then raise (Failure invalid_cond_loop_err)
           else
-            let block_sstmts = check_block (Hashtbl.create 10) block in
+            let block_sstmts = check_block (Hashtbl.create (List.length block)) block in
             SCondLoop (prd_sexpr, block_sstmts)
       | Return exp -> SReturn (check_expr exp)
       | Continue -> SContinue (* TODO implement (only valid in loops) *)
@@ -155,7 +155,7 @@ let check (binds, funcs, stmts): sprogram =
 
     if Hashtbl.mem sfuncs fn.fname || Hashtbl.mem (List.hd !scopes) fn.fname then raise (Failure duplicate_func_err)
     else
-      let body_scope = Hashtbl.create 10 in
+      let body_scope = Hashtbl.create (List.length fn.params + List.length fn.body) in
       let _ = List.iter (
         fun (p_dtype, p_name) -> 
           if Hashtbl.mem body_scope p_name then raise (Failure duplicate_param_name_err)
