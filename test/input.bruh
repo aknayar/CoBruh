@@ -1,5 +1,8 @@
-number a is 5
-number i is 0
-loop i < a:
-  say(i)
-  i is i + 0.5
+number p is 5
+number i is 2
+boolean ans is true
+loop i < p:
+  if p % i == 0:
+    ans is false
+  i is i + 1
+say(ans)

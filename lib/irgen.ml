@@ -86,6 +86,7 @@ let translate (binds, sfuncs): L.llmodule =
               | Minus   -> L.build_fsub
               | Times   -> L.build_fmul
               | Div     -> L.build_fdiv
+              | Mod     -> L.build_frem
               | And     -> L.build_and
               | Or      -> L.build_or
               | Eq      -> L.build_fcmp L.Fcmp.Oeq
