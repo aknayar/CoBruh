@@ -92,10 +92,18 @@ let translate (binds, sfuncs): L.llmodule =
               | Neq     -> L.build_icmp L.Icmp.Ne
               | Less    -> L.build_icmp L.Icmp.Slt
               | Leq     -> L.build_icmp L.Icmp.Sle
-              | Greater -> L.build_icmp L.Icmp.Sgt
+              | Greater -> L.build_fcmp L.Fcmp.Ogt
               | Geq     -> L.build_icmp L.Icmp.Sge
               | _       -> raise (Failure "unimplemented")
           ) e1' e2' "tmp" builder
+      | SUnop (op, e) ->
+          let e' = build_expr builder e in
+          (
+            match op with
+                Not -> L.build_not
+              | Neg -> L.build_fneg
+              | _   -> raise (Failure "unimplemented")
+          ) e' "tmp" builder
       | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) ; (build_expr builder e) |] "" builder
       | _ -> raise (Failure "unimplemented")
     in

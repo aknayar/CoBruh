@@ -1,12 +1,5 @@
-number a is 1
-number b is (10 + 5 * 3)
-if true: 
-  if true:
-    number c is 1
-  number c is 2
+number a is -10
+if a > 5:
+  say('Y')
 else:
-  number c is 3
-loop true:
-  number d is 4
-say(42)
-say(false)
+  say('N')
