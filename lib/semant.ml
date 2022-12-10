@@ -44,17 +44,18 @@ let check (binds, funcs, stmts): sprogram =
   in
 
   let check_func fn = 
-    let scopes = ref [globals] in
+    let scopes = ref [Hashtbl.create 10; globals] in
     let rec check_expr = function
         NumberLit num -> (Number, SNumberLit num)
       | BoolLit bl -> (Bool, SBoolLit bl)
       | CharLit chr -> (Char, SCharLit chr)
       | StringLit str -> (String, SStringLit str)
-      | Id id -> (
-          match List.find_opt (fun scope -> Hashtbl.mem scope id) !scopes with
-              Some scope -> (Hashtbl.find scope id, SId id)
-            | None -> raise (Failure missing_id_err)
-        )
+      | Id id -> 
+          let rec find_id ind sc = 
+            match sc with
+              [] -> raise (Failure missing_id_err)
+            | hd::tl -> if Hashtbl.mem hd id then (Hashtbl.find hd id, SId (id, ind)) else find_id (ind + 1) tl
+          in find_id 0 !scopes
       | Binop (exp1, op, exp2) -> 
           let sexpr1 = check_expr exp1 in let dtype1 = fst sexpr1 in
           let sexpr2 = check_expr exp2 in let dtype2 = fst sexpr2 in
@@ -100,21 +101,22 @@ let check (binds, funcs, stmts): sprogram =
             if Hashtbl.mem curr_scope id then
               let prev_dtype = Hashtbl.find curr_scope id in
               if prev_dtype != typ then raise (Failure invalid_assignment_err)
-              else SReassign (id, sexpr')
+              else SReassign (id, 0, sexpr')
             else let _ = Hashtbl.add curr_scope id (fst sexpr') in SInit (id, sexpr')
       | InferAssign (id, exp) -> 
           let sexpr' = check_expr exp in 
           let curr_dtype = fst sexpr' in
           if curr_dtype = None then raise (Failure none_assignment_err)
           else
-            let sc = List.find_opt (fun scope -> Hashtbl.mem scope id) !scopes in (
-              match sc with 
-                  Some scope -> 
-                    let prev_dtype = Hashtbl.find scope id in
-                    if prev_dtype != curr_dtype then raise (Failure invalid_assignment_err)
-                    else SReassign (id, sexpr')
-                | None -> Hashtbl.add (List.hd !scopes) id (fst sexpr'); SInit (id, sexpr')
-            )
+            let rec find_assign ind sc = 
+              match sc with
+                  [] -> Hashtbl.add (List.hd !scopes) id (fst sexpr'); SInit (id, sexpr')
+                | hd::tl -> 
+                    if Hashtbl.mem hd id then 
+                      if Hashtbl.find hd id != curr_dtype then raise (Failure invalid_assignment_err)
+                      else SReassign (id, ind, sexpr') 
+                    else find_assign (ind + 1) tl
+            in find_assign 0 !scopes
       | Alloc _ -> raise (Failure unimplemented_err)
       | AllocAssign _ -> raise (Failure unimplemented_err)
       | AllocInferAssign _ -> raise (Failure unimplemented_err)
