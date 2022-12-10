@@ -27,6 +27,8 @@ let translate (binds, sfuncs): L.llmodule =
       match typ with
           Number -> L.const_float (lltype_of_dtype typ) 0.0
         | Bool -> L.const_int (lltype_of_dtype typ) 0
+        | Char -> L.const_int (lltype_of_dtype typ) 0
+        | String -> L.const_string context ""
         | _ -> raise (Failure "unimplemented")
     in Hashtbl.add globals name (L.define_global name init mdl)
   in List.iter add_global binds;
@@ -71,8 +73,11 @@ let translate (binds, sfuncs): L.llmodule =
     scopes := body_scope::(!scopes);
 
     let rec build_expr builder (_, exp) = match exp with
-        SNumberLit n -> L.const_float f_t n
-      | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
+        SNumberLit n -> L.const_float (lltype_of_dtype Number) n
+      | SBoolLit b -> L.const_int (lltype_of_dtype Bool) (if b then 1 else 0)
+      | SCharLit c -> L.const_int (lltype_of_dtype Char) (Char.code c)
+      | SStringLit s -> L.const_string context s
+      | SId (id, sc) -> L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder
       | SBinop (e1, op, e2) ->
           let e1' = build_expr builder e1
           and e2' = build_expr builder e2 in
@@ -87,7 +92,7 @@ let translate (binds, sfuncs): L.llmodule =
               | Eq      -> L.build_icmp L.Icmp.Eq
               | Neq     -> L.build_icmp L.Icmp.Ne
               | Less    -> L.build_icmp L.Icmp.Slt
-              | _         -> raise (Failure "unimplemented")
+              | _       -> raise (Failure "unimplemented")
           ) e1' e2' "tmp" builder
       | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) ; (build_expr builder e) |] "printf" builder
       | _ -> raise (Failure "unimplemented")
@@ -112,14 +117,10 @@ let translate (binds, sfuncs): L.llmodule =
           let build_br_merge = L.build_br merge_bb in (* partial function *)
 
           let then_bb = L.append_block context "then" the_func in
-          add_terminal (List.fold_left (
-            fun b s -> build_stmt b s
-          ) (L.builder_at_end context then_bb) if_block) build_br_merge;
+          add_terminal (check_block (Hashtbl.create (List.length if_block)) then_bb if_block) build_br_merge;
 
           let else_bb = L.append_block context "else" the_func in
-          add_terminal (List.fold_left (
-            fun b s -> build_stmt b s
-          ) (L.builder_at_end context else_bb) else_block) build_br_merge;
+          add_terminal (check_block (Hashtbl.create (List.length else_block)) else_bb else_block) build_br_merge;
 
           ignore(L.build_cond_br bool_val then_bb else_bb builder);
           L.builder_at_end context merge_bb
@@ -128,9 +129,7 @@ let translate (binds, sfuncs): L.llmodule =
           ignore(L.build_br prd_bb builder);
       
           let block_bb = L.append_block context "loop_block" the_func in
-          add_terminal (List.fold_left (
-            fun b s -> build_stmt b s
-          ) (L.builder_at_end context block_bb) block) (L.build_br prd_bb);
+          add_terminal (check_block (Hashtbl.create (List.length block)) block_bb block) (L.build_br prd_bb);
       
           let pred_builder = L.builder_at_end context prd_bb in
           let bool_val = build_expr pred_builder prd in
@@ -139,6 +138,11 @@ let translate (binds, sfuncs): L.llmodule =
           ignore(L.build_cond_br bool_val block_bb merge_bb pred_builder);
           L.builder_at_end context merge_bb
       | _ -> raise (Failure "unimplemented")
+    and check_block scope bb block = 
+      scopes := scope::(!scopes);
+      let res = List.fold_left build_stmt (L.builder_at_end context bb) block in
+      scopes := List.tl (!scopes);
+      res
     in
     
     let builder = List.fold_left build_stmt builder fn.sbody in

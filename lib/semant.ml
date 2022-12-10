@@ -45,6 +45,7 @@ let check (binds, funcs, stmts): sprogram =
 
   let check_func fn = 
     let scopes = ref [globals] in
+    
     let rec check_expr = function
         NumberLit num -> (Number, SNumberLit num)
       | BoolLit bl -> (Bool, SBoolLit bl)
