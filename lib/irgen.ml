@@ -26,14 +26,13 @@ let translate (binds, sfuncs): L.llmodule =
     let init = 
       match typ with
           Number -> L.const_float (lltype_of_dtype typ) 0.0
-        | Bool -> L.const_int (lltype_of_dtype typ) 0
-        | Char -> L.const_int (lltype_of_dtype typ) 0
-        | String -> L.const_string context ""
+        | (Bool | Char) -> L.const_int (lltype_of_dtype typ) 0
+        | String -> L.const_stringz context ""
         | _ -> raise (Failure "unimplemented")
     in Hashtbl.add globals name (L.define_global name init mdl)
   in List.iter add_global binds;
 
-  let printf_t : L.lltype = L.var_arg_function_type f_t [| L.pointer_type i8_t |] in
+  let printf_t : L.lltype = L.var_arg_function_type (lltype_of_dtype None) [| L.pointer_type (lltype_of_dtype Char) |] in
   let printf_func : L.llvalue = L.declare_function "printf" printf_t mdl in
 
   let all_funcs = Hashtbl.create (List.length sfuncs) in
@@ -50,7 +49,7 @@ let translate (binds, sfuncs): L.llmodule =
     let builder = L.builder_at_end context (L.entry_block the_func) in
 
     let number_format = L.build_global_stringptr "%f\n" "fmt" builder
-    and bool_format = L.build_global_stringptr "%B\n" "fmt" builder
+    and bool_format = L.build_global_stringptr "%d\n" "fmt" builder
     and char_format = L.build_global_stringptr "%c\n" "fmt" builder
     and string_format = L.build_global_stringptr "%s\n" "fmt" builder in
     let format_string_of_dtype typ = ( 
@@ -76,7 +75,7 @@ let translate (binds, sfuncs): L.llmodule =
         SNumberLit n -> L.const_float (lltype_of_dtype Number) n
       | SBoolLit b -> L.const_int (lltype_of_dtype Bool) (if b then 1 else 0)
       | SCharLit c -> L.const_int (lltype_of_dtype Char) (Char.code c)
-      | SStringLit s -> L.const_string context s
+      | SStringLit s -> L.const_stringz context s
       | SId (id, sc) -> L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder
       | SBinop (e1, op, e2) ->
           let e1' = build_expr builder e1
@@ -97,7 +96,7 @@ let translate (binds, sfuncs): L.llmodule =
               | Geq     -> L.build_icmp L.Icmp.Sge
               | _       -> raise (Failure "unimplemented")
           ) e1' e2' "tmp" builder
-      | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) ; (build_expr builder e) |] "printf" builder
+      | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) ; (build_expr builder e) |] "" builder
       | _ -> raise (Failure "unimplemented")
     in
 
