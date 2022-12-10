@@ -101,6 +101,21 @@ let translate (binds, sfuncs): L.llmodule =
 
           ignore(L.build_cond_br bool_val then_bb else_bb builder);
           L.builder_at_end context merge_bb
+      | SCondLoop (prd, block) ->
+          let prd_bb = L.append_block context "loop" the_func in
+          ignore(L.build_br prd_bb builder);
+      
+          let block_bb = L.append_block context "loop_block" the_func in
+          add_terminal (List.fold_left (
+            fun b s -> build_stmt  sc b s
+          ) (L.builder_at_end context block_bb) block) (L.build_br prd_bb);
+      
+          let pred_builder = L.builder_at_end context prd_bb in
+          let bool_val = build_expr pred_builder prd in
+      
+          let merge_bb = L.append_block context "merge" the_func in
+          ignore(L.build_cond_br bool_val block_bb merge_bb pred_builder);
+          L.builder_at_end context merge_bb
       | _ -> raise (Failure "unimplemented")
     in
     

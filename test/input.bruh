@@ -6,3 +6,5 @@ if true:
   number c is 2
 else:
   number c is 3
+loop true:
+  number d is 4
