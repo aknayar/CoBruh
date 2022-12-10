@@ -92,6 +92,9 @@ let translate (binds, sfuncs): L.llmodule =
               | Eq      -> L.build_icmp L.Icmp.Eq
               | Neq     -> L.build_icmp L.Icmp.Ne
               | Less    -> L.build_icmp L.Icmp.Slt
+              | Leq     -> L.build_icmp L.Icmp.Sle
+              | Greater -> L.build_icmp L.Icmp.Sgt
+              | Geq     -> L.build_icmp L.Icmp.Sge
               | _       -> raise (Failure "unimplemented")
           ) e1' e2' "tmp" builder
       | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) ; (build_expr builder e) |] "printf" builder
