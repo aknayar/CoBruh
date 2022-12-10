@@ -120,10 +120,10 @@ let translate (binds, sfuncs): L.llmodule =
           let build_br_merge = L.build_br merge_bb in (* partial function *)
 
           let then_bb = L.append_block context "then" the_func in
-          add_terminal (check_block (Hashtbl.create (List.length if_block)) then_bb if_block) build_br_merge;
+          add_terminal (do_block (Hashtbl.create (List.length if_block)) then_bb if_block) build_br_merge;
 
           let else_bb = L.append_block context "else" the_func in
-          add_terminal (check_block (Hashtbl.create (List.length else_block)) else_bb else_block) build_br_merge;
+          add_terminal (do_block (Hashtbl.create (List.length else_block)) else_bb else_block) build_br_merge;
 
           ignore(L.build_cond_br bool_val then_bb else_bb builder);
           L.builder_at_end context merge_bb
@@ -132,7 +132,7 @@ let translate (binds, sfuncs): L.llmodule =
           ignore(L.build_br prd_bb builder);
       
           let block_bb = L.append_block context "loop_block" the_func in
-          add_terminal (check_block (Hashtbl.create (List.length block)) block_bb block) (L.build_br prd_bb);
+          add_terminal (do_block (Hashtbl.create (List.length block)) block_bb block) (L.build_br prd_bb);
       
           let pred_builder = L.builder_at_end context prd_bb in
           let bool_val = build_expr pred_builder prd in
@@ -141,7 +141,7 @@ let translate (binds, sfuncs): L.llmodule =
           ignore(L.build_cond_br bool_val block_bb merge_bb pred_builder);
           L.builder_at_end context merge_bb
       | _ -> raise (Failure "unimplemented")
-    and check_block scope bb block = 
+    and do_block scope bb block = 
       scopes := scope::(!scopes);
       let res = List.fold_left build_stmt (L.builder_at_end context bb) block in
       scopes := List.tl (!scopes);
