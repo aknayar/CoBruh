@@ -7,7 +7,7 @@ let translate (binds, sfuncs): L.llmodule =
   let context = L.global_context () in
   let mdl = L.create_module context "CoBruh" in
 
-  let f_t = L.float_type context 
+  let f_t = L.double_type context 
   and i1_t = L.i1_type context 
   and i8_t = L.i8_type context 
   and void_t = L.void_type context in
@@ -48,7 +48,7 @@ let translate (binds, sfuncs): L.llmodule =
     let (the_func, _) = Hashtbl.find all_funcs fn.sfname in
     let builder = L.builder_at_end context (L.entry_block the_func) in
 
-    let number_format = L.build_global_stringptr "%f\n" "fmt" builder
+    let number_format = L.build_global_stringptr "%g\n" "fmt" builder
     and bool_format = L.build_global_stringptr "%d\n" "fmt" builder
     and char_format = L.build_global_stringptr "%c\n" "fmt" builder
     and string_format = L.build_global_stringptr "%s\n" "fmt" builder in
