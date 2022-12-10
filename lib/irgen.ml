@@ -88,12 +88,12 @@ let translate (binds, sfuncs): L.llmodule =
               | Div     -> L.build_fdiv
               | And     -> L.build_and
               | Or      -> L.build_or
-              | Eq      -> L.build_icmp L.Icmp.Eq
-              | Neq     -> L.build_icmp L.Icmp.Ne
-              | Less    -> L.build_icmp L.Icmp.Slt
-              | Leq     -> L.build_icmp L.Icmp.Sle
+              | Eq      -> L.build_fcmp L.Fcmp.Oeq
+              | Neq     -> L.build_fcmp L.Fcmp.One
+              | Less    -> L.build_fcmp L.Fcmp.Olt
+              | Leq     -> L.build_fcmp L.Fcmp.Ole
               | Greater -> L.build_fcmp L.Fcmp.Ogt
-              | Geq     -> L.build_icmp L.Icmp.Sge
+              | Geq     -> L.build_fcmp L.Fcmp.Oge
               | _       -> raise (Failure "unimplemented")
           ) e1' e2' "tmp" builder
       | SUnop (op, e) ->
