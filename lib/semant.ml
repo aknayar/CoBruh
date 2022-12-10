@@ -75,7 +75,7 @@ let check (binds, funcs, stmts): sprogram =
             match op with
                 Not when dtype' = Bool -> Bool
               | Neg when dtype' = Number -> Number
-              | _ -> raise (Failure invalid_unop_args_err) 
+              | _ -> raise (Failure invalid_unop_args_err)
           ) in
           (res_type, SUnop (op, sexpr'))
       | Call (id, passed_params) -> 
