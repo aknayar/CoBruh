@@ -111,6 +111,9 @@ let translate (binds, sfuncs): L.llmodule =
           in Hashtbl.add (List.hd !scopes) id local;
           let sexp' = build_expr builder sexp in
           ignore (L.build_store sexp' local builder); builder
+      | SReassign (id, sc, sexp) -> 
+          let sexp' = build_expr builder sexp in
+          ignore (L.build_store sexp' (Hashtbl.find (List.nth !scopes sc) id) builder); builder
       | SIf (prd, if_block, else_block) ->
           let bool_val = build_expr builder prd in
           let merge_bb = L.append_block context "merge" the_func in
