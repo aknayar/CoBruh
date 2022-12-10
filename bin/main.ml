@@ -48,4 +48,9 @@ let _ =
       let sast = Semant.check ast in
       let ir = Irgen.translate sast in
       Printf.fprintf !out_channel "\n%s\n" (Llvm.string_of_llmodule ir)
-  | _ -> raise (Failure "not implemented")
+  | Compile ->
+      let ast = Parser.program (deflate Scanner.token) lexbuf in
+      let sast = Semant.check ast in
+      let ir = Irgen.translate sast in
+      Llvm_analysis.assert_valid_module ir;
+      Printf.fprintf !out_channel "\n%s\n" (Llvm.string_of_llmodule ir)

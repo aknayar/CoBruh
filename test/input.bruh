@@ -8,3 +8,5 @@ else:
   number c is 3
 loop true:
   number d is 4
+say(42)
+say(false)
