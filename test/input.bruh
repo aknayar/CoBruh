@@ -1,5 +1,5 @@
-number a is -10
-if a > 5:
-  say('Y')
-else:
-  say('N')
+number a is 5
+number i is 0
+loop i < a:
+  say(i)
+  i is i + 0.5
