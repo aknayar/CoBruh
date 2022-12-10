@@ -88,14 +88,22 @@ let translate (binds, sfuncs): L.llmodule =
               | Div     -> L.build_fdiv
               | And     -> L.build_and
               | Or      -> L.build_or
-              | Eq      -> L.build_icmp L.Icmp.Eq
-              | Neq     -> L.build_icmp L.Icmp.Ne
-              | Less    -> L.build_icmp L.Icmp.Slt
-              | Leq     -> L.build_icmp L.Icmp.Sle
-              | Greater -> L.build_icmp L.Icmp.Sgt
-              | Geq     -> L.build_icmp L.Icmp.Sge
+              | Eq      -> L.build_fcmp L.Fcmp.Oeq
+              | Neq     -> L.build_fcmp L.Fcmp.One
+              | Less    -> L.build_fcmp L.Fcmp.Olt
+              | Leq     -> L.build_fcmp L.Fcmp.Ole
+              | Greater -> L.build_fcmp L.Fcmp.Ogt
+              | Geq     -> L.build_fcmp L.Fcmp.Oge
               | _       -> raise (Failure "unimplemented")
           ) e1' e2' "tmp" builder
+      | SUnop (op, e) ->
+          let e' = build_expr builder e in
+          (
+            match op with
+                Not -> L.build_not
+              | Neg -> L.build_fneg
+              | _   -> raise (Failure "unimplemented")
+          ) e' "tmp" builder
       | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) ; (build_expr builder e) |] "" builder
       | _ -> raise (Failure "unimplemented")
     in
