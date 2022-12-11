@@ -1,8 +1,20 @@
-number p is 5
-number i is 2
-boolean ans is true
-loop i < p:
-  if p % i == 0:
-    ans is false
-  i is i + 1
-say(ans)
+number primes is 10
+number count is 0
+number cand is 2
+loop count < primes:
+  if cand < 4:
+    count is count + 1
+    say(cand)
+  else:
+    number i is 2
+    boolean prime is true
+    loop i < cand:
+      if cand % i == 0:
+        prime is false
+      i is i + 1
+    if prime:
+      count is count + 1
+      say(cand)
+  cand is cand + 1
+
+say("Done")
