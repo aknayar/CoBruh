@@ -1,4 +1,4 @@
-define gcd(number primes, number count, number cand -> none):
+define gcd(number primes, number count, number cand -> string):
   loop count < primes:
     if cand < 4:
       count is count + 1
@@ -14,5 +14,7 @@ define gcd(number primes, number count, number cand -> none):
         count is count + 1
         say(cand)
     cand is cand + 1
+  
+  return "Done"
 
-gcd(10, 0, 2)
+say(gcd(10, 0, 2))

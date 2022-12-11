@@ -171,11 +171,8 @@ let translate (binds, sfuncs): L.llmodule =
     
     let builder = List.fold_left build_stmt builder fn.sbody in
 
-    add_terminal builder (
-      match fn.srtype with
-          None -> L.build_ret_void
-        | typ -> L.build_ret (L.const_float (lltype_of_dtype typ) 0.0)
-    )
+    if fn.srtype = None then add_terminal builder (L.build_ret_void)
+    else ()
 
   in List.iter build_func_body sfuncs;
   mdl
