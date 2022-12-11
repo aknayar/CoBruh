@@ -1,20 +1,28 @@
-number primes is 10
-number count is 0
-number cand is 2
-loop count < primes:
-  if cand < 4:
-    count is count + 1
-    say(cand)
-  else:
-    number i is 2
-    boolean prime is true
-    loop i < cand:
-      if cand % i == 0:
-        prime is false
-      i is i + 1
-    if prime:
+define gcd(number primes, number count, number cand -> string):
+  loop count < primes:
+    if cand < 4:
       count is count + 1
       say(cand)
-  cand is cand + 1
+    else:
+      number i is 2
+      boolean prime is true
+      loop i < cand:
+        if cand % i == 0:
+          prime is false
+        i is i + 1
+      if prime:
+        count is count + 1
+        say(cand)
+    cand is cand + 1
 
-say("Done")
+    # return "Unfinished"
+  
+  return "Done"
+
+define say_hi(number it -> none):
+  if it > 0:
+    say("Hello world")
+    say_hi(it - 1)
+
+say(gcd(10, 0, 2))
+say_hi(5)

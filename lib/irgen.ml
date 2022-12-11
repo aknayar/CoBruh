@@ -16,7 +16,7 @@ let translate (binds, sfuncs): L.llmodule =
       Number -> f_t
     | Bool -> i1_t
     | Char -> i8_t
-    (* string is special case *)
+    | String -> L.pointer_type i8_t
     | None -> void_t
     | _ -> raise (Failure "unimplemented") 
   in
@@ -32,7 +32,7 @@ let translate (binds, sfuncs): L.llmodule =
     in Hashtbl.add globals name (L.define_global name init mdl)
   in List.iter add_global binds;
 
-  let printf_t : L.lltype = L.var_arg_function_type (lltype_of_dtype None) [| L.pointer_type (lltype_of_dtype Char) |] in
+  let printf_t : L.lltype = L.var_arg_function_type void_t [| L.pointer_type i8_t |] in
   let printf_func : L.llvalue = L.declare_function "printf" printf_t mdl in
 
   let all_funcs = Hashtbl.create (List.length sfuncs) in
@@ -106,6 +106,11 @@ let translate (binds, sfuncs): L.llmodule =
               | _   -> raise (Failure "unimplemented")
           ) e' "tmp" builder
       | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) ; (build_expr builder e) |] "" builder
+      | SCall (id, params) -> 
+          let (fdef, fn') = Hashtbl.find all_funcs id in
+          let llargs = List.rev (List.map (build_expr builder) (List.rev params)) in
+          let res = if fn'.srtype = None then "" else id ^ "_result" in
+          L.build_call fdef (Array.of_list llargs) res builder
       | _ -> raise (Failure "unimplemented")
     in
 
@@ -151,6 +156,11 @@ let translate (binds, sfuncs): L.llmodule =
           let merge_bb = L.append_block context "merge" the_func in
           ignore(L.build_cond_br bool_val block_bb merge_bb pred_builder);
           L.builder_at_end context merge_bb
+      | SReturn sexp -> 
+          ignore (
+            if fn.srtype = None then L.build_ret_void builder
+            else L.build_ret (build_expr builder sexp) builder
+          ); builder
       | _ -> raise (Failure "unimplemented")
     and do_block scope bb block = 
       scopes := scope::(!scopes);
@@ -161,11 +171,8 @@ let translate (binds, sfuncs): L.llmodule =
     
     let builder = List.fold_left build_stmt builder fn.sbody in
 
-    add_terminal builder (
-      match fn.srtype with
-          None -> L.build_ret_void
-        | typ -> L.build_ret (L.const_float (lltype_of_dtype typ) 0.0)
-    )
+    if fn.srtype = None then add_terminal builder (L.build_ret_void)
+    else ()
 
   in List.iter build_func_body sfuncs;
   mdl

@@ -33,9 +33,5 @@ type sfunc = {
   sbody: sstmt list;
 }
 
-type sdecl = 
-    SStmt of sstmt
-  | SFunc of sfunc
-
 type sprogram = bind list * sfunc list
 

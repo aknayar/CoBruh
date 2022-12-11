@@ -69,10 +69,6 @@ type func = {
   body: stmt list;
 }
 
-type decl =
-    Stmt of stmt
-  | Func of func
-
 type program = bind list * func list * stmt list
 
 let curr_indent_level = ref 0
