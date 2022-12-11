@@ -106,6 +106,11 @@ let translate (binds, sfuncs): L.llmodule =
               | _   -> raise (Failure "unimplemented")
           ) e' "tmp" builder
       | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) ; (build_expr builder e) |] "" builder
+      | SCall (id, params) -> 
+          let (fdef, fn) = Hashtbl.find all_funcs id in
+          let llargs = List.rev (List.map (build_expr builder) (List.rev params)) in
+          let res = if fn.srtype = None then "" else id ^ "_result" in
+          L.build_call fdef (Array.of_list llargs) res builder
       | _ -> raise (Failure "unimplemented")
     in
 
