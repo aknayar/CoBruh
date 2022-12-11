@@ -176,6 +176,7 @@ let check (binds, funcs, stmts): sprogram =
                   )
                 | SIf (_, if_sstmts, else_sstmts) -> (ensure_valid_return if_sstmts) && (ensure_valid_return else_sstmts)
                 | SIterLoop (_, _, _, _, block_sstmts) -> let _ = ensure_valid_return block_sstmts in false
+                | SCondLoop (_, block_sstmts) -> let _ = ensure_valid_return block_sstmts in false
                 | _ -> false
         ) false block in
       let has_valid_return = ensure_valid_return body_sstmts in
