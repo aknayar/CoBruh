@@ -16,7 +16,7 @@ let translate (binds, sfuncs): L.llmodule =
       Number -> f_t
     | Bool -> i1_t
     | Char -> i8_t
-    (* string is special case *)
+    | String -> L.pointer_type i8_t
     | None -> void_t
     | _ -> raise (Failure "unimplemented") 
   in
