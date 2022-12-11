@@ -27,8 +27,8 @@ let _ =
   
   let lexbuf = Lexing.from_channel !in_channel in
   let get_ast () = Option.get (try Some (Parser.program (deflate Scanner.token) lexbuf) with Failure err -> Printf.fprintf !out_channel "\nError in scanner/parser: %s\n" err; exit 0) in
-  let get_sast ast = Option.get (try Some (Semant.check ast) with Failure err -> Printf.fprintf !out_channel "\nError in semantics: %s" err; exit 0) in
-  let get_ir sast = Option.get (try Some (Irgen.translate sast) with Failure err -> Printf.fprintf !out_channel "\nError in IR: %s" err; exit 0) in
+  let get_sast ast = Option.get (try Some (Semant.check ast) with Failure err -> Printf.fprintf !out_channel "\nError in semantics: %s\n" err; exit 0) in
+  let get_ir sast = Option.get (try Some (Irgen.translate sast) with Failure err -> Printf.fprintf !out_channel "\nError in IR: %s\n" err; exit 0) in
   match !action with
       Parse -> Printf.fprintf !out_channel "\n%s\n" (Ast.string_of_program (get_ast ()))
     | Semantics -> 
