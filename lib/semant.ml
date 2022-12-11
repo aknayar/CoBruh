@@ -11,17 +11,19 @@ let invalid_cond_loop_err typ = "conditional loop must take in boolean, but " ^ 
 let invalid_if_err typ = "if must take in boolean, but " ^ typ ^ " is passed"
 let invalid_iter_loop_err typs = "iterative loop must take in (number, number, number), but (" ^ String.concat ", " typs ^ ") is passed"
 let invalid_unop_args_err op = "invalid argument for unary operator " ^ op
-let mismatched_func_args_err name = "mismatched arguments for function call to " ^ name
+let mismatched_func_args_err name exp act = "function call to " ^ name ^ " expected " ^ exp ^ " but got " ^ act
 let mismatched_bop_args_err op = "mismatched arguments for binary operator " ^ op
 let mismatched_return_err name = "incorrect function return type for " ^ name
 let missing_func_err name = "function " ^ name ^ " does not exist"
 let missing_id_err name = "variable " ^ name ^ " does not exist"
 let missing_return_err name = "missing return statement for " ^ name
+let none_arg_err name = "function call to " ^ name ^ " gets passed a none"
 let none_assignment_err name = "cannot assign to none, but " ^ name ^ " tries to"
-let none_return_err name = "function " ^ name ^ " has non-none return type but does not return"
+let none_return_err name typ = "function " ^ name ^ " has " ^ typ ^ " return type but does not return"
 let nonguaranteed_return_err name = "function " ^ name ^ " is not guaranteed to return"
 let reserved_function_name_err name = "function name " ^ name ^ " is reserved"
-let return_in_none_err name = "function " ^ name ^ " has none return type but returns something"
+let return_in_none_err name typ = "function " ^ name ^ " has none return type but returns " ^ typ
+let unequal_func_args_count_err name exp act = "function call to " ^ name ^ " expects " ^ exp ^ " arguments but got " ^ act
 let unimplemented_err = "unimplemented"
   
 let reserved_funcs = ["main"; "say"]
@@ -87,13 +89,18 @@ let check (binds, funcs, stmts): sprogram =
           let (fn_params, fn_rtype) = 
             if not (Hashtbl.mem sfuncs id) then raise (Failure (missing_func_err id))
             else Hashtbl.find sfuncs id in 
-          if List.length passed_params != List.length fn_params then raise (Failure (mismatched_func_args_err id))
-          else if List.exists2 (
+          if List.length passed_params != List.length fn_params then raise (
+            Failure (unequal_func_args_count_err id  (string_of_int (List.length fn_params)) (string_of_int (List.length passed_params)))
+          )
+          else List.iter2 (
             fun passed_param fn_param -> 
-              let (passed_dtype, _) = check_expr passed_param 
-              in passed_dtype = None || (passed_dtype != fst fn_param && not (fst fn_param = Any))
-          ) passed_params fn_params then raise (Failure (mismatched_func_args_err id))
-          else (fn_rtype, SCall (id, List.map check_expr passed_params))
+              let (passed_dtype, _) = check_expr passed_param in 
+              if passed_dtype = None then raise (Failure (none_arg_err id))
+              else if passed_dtype != fst fn_param && not (fst fn_param = Any) then raise (
+                Failure (mismatched_func_args_err id (string_of_dtype (fst fn_param)) (string_of_dtype passed_dtype))
+              )
+          ) passed_params fn_params;
+          (fn_rtype, SCall (id, List.map check_expr passed_params))
       | Elem _ -> raise (Failure unimplemented_err)
 
     in
@@ -177,7 +184,7 @@ let check (binds, funcs, stmts): sprogram =
             match s with
                 SReturn rtyp -> (
                   match fn.rtype with
-                      None -> raise (Failure (return_in_none_err fn.fname))
+                      None -> raise (Failure (return_in_none_err fn.fname (string_of_dtype (fst rtyp))))
                     | _ as typ -> if fst rtyp != typ then raise (Failure (mismatched_return_err fn.fname)) else true
                 )
               | SIf (_, if_sstmts, else_sstmts) -> (ensure_valid_return if_sstmts) && (ensure_valid_return else_sstmts)
