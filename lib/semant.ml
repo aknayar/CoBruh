@@ -14,15 +14,17 @@ let invalid_unop_args_err = "invalid argument for unary operator"
 let mismatched_func_args_err = "mismatched arguments for function call"
 let mismatched_bop_args_err = "mismatched arguments for binary operator"
 let mismatched_return_err = "incorrect function return type"
-let missing_func_err = "function does not exist"
+let missing_func_err name = "function " ^ name ^ " does not exist"
 let missing_id_err = "variable does not exist"
 let missing_return_err = "missing return statement"
 let none_assignment_err = "cannot assign to none"
 let none_return_err = "function with non-none return type does not return anything"
 let nonguaranteed_return_err = "function is not guaranteed to return"
-let reserved_function_name_err = "function names \"main\" and \"say\" are reserved"
+let reserved_function_name_err name = "function name " ^ name ^ " is reserved"
 let return_in_none_err = "function that returns none cannot have return statement"
 let unimplemented_err = "unimplemented"
+
+let reserved_funcs = ["main"; "say"]
 
 let check (binds, funcs, stmts): sprogram =
 
@@ -36,12 +38,15 @@ let check (binds, funcs, stmts): sprogram =
   
   (**** Check for reserved functions ****)
   let sfuncs = Hashtbl.create (List.length funcs + 2) in
-  if List.exists (fun fn -> fn.fname = "main" || fn.fname = "say") funcs then raise (Failure reserved_function_name_err)
-  else (
-    Hashtbl.add sfuncs "say" ([(Any, "arg")], None)
-  );
-  let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}]
-  in
+  List.iter (
+    fun fn -> 
+      if List.exists ((=) fn.fname) reserved_funcs then raise (Failure (reserved_function_name_err fn.fname))
+      else if Hashtbl.mem sfuncs fn.fname then raise (Failure duplicate_func_err)
+      else Hashtbl.add sfuncs fn.fname (fn.params, fn.rtype)
+  ) funcs;
+  Hashtbl.add sfuncs "say" ([(Any, "arg")], None);
+  let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}] in
+  Hashtbl.add sfuncs "main" ([], None);
 
   let check_func fn = 
     let scopes = ref [globals] in
@@ -80,12 +85,13 @@ let check (binds, funcs, stmts): sprogram =
           (res_type, SUnop (op, sexpr'))
       | Call (id, passed_params) -> 
           let (fn_params, fn_rtype) = 
-            if not (Hashtbl.mem sfuncs id) then raise (Failure (missing_func_err ^ " (" ^ id ^ ")"))
+            if not (Hashtbl.mem sfuncs id) then raise (Failure (missing_func_err id))
             else Hashtbl.find sfuncs id in 
           if List.length passed_params != List.length fn_params then raise (Failure mismatched_func_args_err)
           else if List.exists2 (
-            fun passed_param fn_param -> let (passed_dtype, _) = check_expr passed_param 
-            in passed_dtype != fst fn_param && not (fst fn_param = Any)
+            fun passed_param fn_param -> 
+              let (passed_dtype, _) = check_expr passed_param 
+              in passed_dtype = None || (passed_dtype != fst fn_param && not (fst fn_param = Any))
           ) passed_params fn_params then raise (Failure mismatched_func_args_err)
           else (fn_rtype, SCall (id, List.map check_expr passed_params))
       | Elem _ -> raise (Failure unimplemented_err)
@@ -154,38 +160,36 @@ let check (binds, funcs, stmts): sprogram =
       in res
     in
 
-    if Hashtbl.mem sfuncs fn.fname || Hashtbl.mem (List.hd !scopes) fn.fname then raise (Failure duplicate_func_err)
-    else
-      let body_scope = Hashtbl.create (List.length fn.params + List.length fn.body) in
-      let _ = List.iter (
-        fun (p_dtype, p_name) -> 
-          if Hashtbl.mem body_scope p_name then raise (Failure duplicate_param_name_err)
-          else Hashtbl.add body_scope p_name p_dtype
-      ) fn.params in
-      let body_sstmts = check_block body_scope fn.body in
-      let rec ensure_valid_return block = 
-        List.fold_left (
-          fun is_dangling s ->
-            if is_dangling then raise (Failure dangling_code_err)
-            else
-              match s with
-                  SReturn rtyp -> (
-                    match fn.rtype with
-                        None -> raise (Failure return_in_none_err)
-                      | _ as typ -> if fst rtyp != typ then raise (Failure mismatched_return_err) else true
-                  )
-                | SIf (_, if_sstmts, else_sstmts) -> (ensure_valid_return if_sstmts) && (ensure_valid_return else_sstmts)
-                | SIterLoop (_, _, _, _, block_sstmts) -> let _ = ensure_valid_return block_sstmts in false
-                | SCondLoop (_, block_sstmts) -> let _ = ensure_valid_return block_sstmts in false
-                | _ -> false
-        ) false block in
-      let has_valid_return = ensure_valid_return body_sstmts in
-      if not has_valid_return && fn.rtype != None then raise (Failure nonguaranteed_return_err)
-      else Hashtbl.add sfuncs fn.fname (fn.params, fn.rtype);
-      {
-        sfname = fn.fname;
-        sparams = fn.params;
-        srtype = fn.rtype;
-        sbody = body_sstmts;
-      }
+    let body_scope = Hashtbl.create (List.length fn.params + List.length fn.body) in
+    let _ = List.iter (
+      fun (p_dtype, p_name) -> 
+        if Hashtbl.mem body_scope p_name then raise (Failure duplicate_param_name_err)
+        else Hashtbl.add body_scope p_name p_dtype
+    ) fn.params in
+    let body_sstmts = check_block body_scope fn.body in
+    let rec ensure_valid_return block = 
+      List.fold_left (
+        fun is_dangling s ->
+          if is_dangling then raise (Failure dangling_code_err)
+          else
+            match s with
+                SReturn rtyp -> (
+                  match fn.rtype with
+                      None -> raise (Failure return_in_none_err)
+                    | _ as typ -> if fst rtyp != typ then raise (Failure mismatched_return_err) else true
+                )
+              | SIf (_, if_sstmts, else_sstmts) -> (ensure_valid_return if_sstmts) && (ensure_valid_return else_sstmts)
+              | SIterLoop (_, _, _, _, block_sstmts) -> let _ = ensure_valid_return block_sstmts in false
+              | SCondLoop (_, block_sstmts) -> let _ = ensure_valid_return block_sstmts in false
+              | _ -> false
+      ) false block in
+    let has_valid_return = ensure_valid_return body_sstmts in
+    if not has_valid_return && fn.rtype != None then raise (Failure nonguaranteed_return_err)
+    else ();
+    {
+      sfname = fn.fname;
+      sparams = fn.params;
+      srtype = fn.rtype;
+      sbody = body_sstmts;
+    }
   in (binds, List.map check_func funcs)

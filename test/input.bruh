@@ -14,7 +14,10 @@ define gcd(number primes, number count, number cand -> string):
         count is count + 1
         say(cand)
     cand is cand + 1
+
+    # return "Unfinished"
   
   return "Done"
 
 say(gcd(10, 0, 2))
+# say(say(42))
