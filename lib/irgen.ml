@@ -50,20 +50,16 @@ let translate (binds, sfuncs): L.llmodule =
     let (the_func, _) = Hashtbl.find all_funcs fn.sfname in
     let builder = L.builder_at_end context (L.entry_block the_func) in
 
-    let number_format = L.build_global_stringptr "%g\n" "fmt" builder 
-    and scan_number_format = L.build_global_stringptr "%lf" "fmt" builder 
-    and bool_format = L.build_global_stringptr "%d\n" "fmt" builder
-    and scan_bool_format = L.build_global_stringptr "%d" "fmt" builder
-    and char_format = L.build_global_stringptr "%c\n" "fmt" builder
-    and scan_char_format = L.build_global_stringptr "%c" "fmt" builder
-    and string_format = L.build_global_stringptr "%s\n" "fmt" builder 
-    and scan_string_format = L.build_global_stringptr "%s" "fmt" builder in
+    let number_format scan = L.build_global_stringptr (if scan then "%lf" else "%g\n") "fmt" builder 
+    and bool_format scan = L.build_global_stringptr (if scan then "%d" else "%d\n") "fmt" builder
+    and char_format scan = L.build_global_stringptr (if scan then "%c" else "%c\n") "fmt" builder
+    and string_format scan = L.build_global_stringptr (if scan then "%s" else "%s\n") "fmt" builder in
     let format_string_of_dtype typ scan = ( 
       match typ with
-          Number -> if scan then scan_number_format else number_format
-        | Bool -> if scan then scan_bool_format else bool_format
-        | Char -> if scan then scan_char_format else char_format
-        | String -> if scan then scan_string_format else string_format
+          Number -> number_format scan
+        | Bool -> bool_format scan
+        | Char -> char_format scan
+        | String -> string_format scan
         | _ -> raise (Failure "unimplemented")
     ) in
 
