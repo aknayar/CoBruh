@@ -50,7 +50,7 @@ let translate (binds, sfuncs): L.llmodule =
     let (the_func, _) = Hashtbl.find all_funcs fn.sfname in
     let builder = L.builder_at_end context (L.entry_block the_func) in
 
-    let number_format = L.build_global_stringptr "%g" "fmt" builder 
+    let number_format = L.build_global_stringptr "%g\n" "fmt" builder 
     and scan_number_format = L.build_global_stringptr "%lf" "fmt" builder 
     and bool_format = L.build_global_stringptr "%d\n" "fmt" builder
     and scan_bool_format = L.build_global_stringptr "%d" "fmt" builder
@@ -74,6 +74,11 @@ let translate (binds, sfuncs): L.llmodule =
       ignore (L.build_store param local builder);
       Hashtbl.add body_scope name local
     in List.iter2 add_param fn.sparams (Array.to_list (L.params the_func));
+
+    let read_typ = function 
+      (typ, SId (id, sc)) -> let dest_ptr = Hashtbl.find (List.nth !scopes sc) id in
+        L.build_call scanf_func [| format_string_of_dtype typ true ; dest_ptr |] "" builder
+    | _ -> raise (Failure "invalid input") in
 
     scopes := body_scope::(!scopes);
 
@@ -112,15 +117,14 @@ let translate (binds, sfuncs): L.llmodule =
               | _   -> raise (Failure "unimplemented")
           ) e' "tmp" builder
       | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false ; (build_expr builder e) |] "" builder
-      | SCall ("inputn", [dest]) -> 
-          (match dest with
-              (_, SId (id, sc)) -> let dest_ptr = Hashtbl.find (List.nth !scopes sc) id in
-              L.build_call scanf_func [| format_string_of_dtype Number true ; dest_ptr |] "" builder
-            | _ -> raise (Failure "invalid input"))
       | SCall ("inputc", [dest]) -> 
+          read_typ dest
+      | SCall ("inputn", [dest]) -> 
+          read_typ dest
+      | SCall ("inputs", [dest]) -> 
           (match dest with
               (_, SId (id, sc)) -> let dest_ptr = Hashtbl.find (List.nth !scopes sc) id in
-              L.build_call scanf_func [| format_string_of_dtype Char true ; dest_ptr |] "" builder
+              L.build_call scanf_func [| format_string_of_dtype String true ; dest_ptr |] "" builder
             | _ -> raise (Failure "invalid input"))
       | SCall (id, params) -> 
           let (fdef, fn') = Hashtbl.find all_funcs id in

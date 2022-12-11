@@ -1,13 +1,10 @@
+define factorial (number n -> number):
+  if n < 2:
+    return n
+  return n * factorial(n - 1)
 
 number x
-character y
-
+say("Input a number: ")
 inputn(x)
-say(x)
-inputc(y)
-inputc(y)
-inputc(y)
-inputc(y)
-say(y)
-say(y)
-say(y)
+say("The factorial is: ")
+say(factorial(x))
