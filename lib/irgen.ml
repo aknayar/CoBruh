@@ -75,7 +75,7 @@ let translate (binds, sfuncs): L.llmodule =
         SNumberLit n -> L.const_float (lltype_of_dtype Number) n
       | SBoolLit b -> L.const_int (lltype_of_dtype Bool) (if b then 1 else 0)
       | SCharLit c -> L.const_int (lltype_of_dtype Char) (Char.code c)
-      | SStringLit s -> L.const_stringz context s
+      | SStringLit s -> L.build_global_stringptr s "tmp" builder
       | SId (id, sc) -> L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder
       | SBinop (e1, op, e2) ->
           let e1' = build_expr builder e1
