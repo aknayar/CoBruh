@@ -4,7 +4,7 @@
   let excess_indent_err = "too many indentations"
   let extra_space_err = "extra space"
   let mismatched_quote_err = "mismatched quotation"
-  let illegal_character_err = "illegal character"
+  let illegal_character_err c = "illegal character " ^ Char.escaped c
   
   let is_start_of_line = ref true
   let curr_scope = ref 0 (* same as number of indents *)
@@ -111,7 +111,7 @@ rule token = parse
 
 | eof         { if not !is_start_of_line then EOL::(dedent_to_zero () @ [EOF]) else dedent_to_zero () @ [EOF] }
 | ('"' | ''') { raise (Failure(mismatched_quote_err)) }
-| _           { raise (Failure(illegal_character_err)) }
+| _ as c      { raise (Failure(illegal_character_err c)) }
 
 and comment = parse
   '\n' { let was_start = !is_start_of_line in set_new_line (); if not was_start then EOL::(token lexbuf) else token lexbuf }

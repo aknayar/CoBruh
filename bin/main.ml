@@ -15,7 +15,7 @@ let _ =
   let action = ref Compile in
   let set_action a () = action := a in
   let speclist = [
-    ("-p", Arg.Unit (set_action Parse), "Print AST");
+    ("-a", Arg.Unit (set_action Parse), "Print AST");
     ("-s", Arg.Unit (set_action Semantics), "Print semantics check");
     ("-l", Arg.Unit (set_action Ir), "Print LLVM IR");
     ("-c", Arg.Unit (set_action Compile), "Check and print LLVM IR (default)");
@@ -26,31 +26,24 @@ let _ =
   Arg.parse speclist (fun filename -> in_channel := open_in filename) usage_msg;
   
   let lexbuf = Lexing.from_channel !in_channel in
+  let get_ast () = Option.get (try Some (Parser.program (deflate Scanner.token) lexbuf) with Failure err -> Printf.fprintf !out_channel "\nError in scanner/parser: %s\n" err; exit 0) in
+  let get_sast ast = Option.get (try Some (Semant.check ast) with Failure err -> Printf.fprintf !out_channel "\nError in semantics: %s" err; exit 0) in
+  let get_ir sast = Option.get (try Some (Irgen.translate sast) with Failure err -> Printf.fprintf !out_channel "\nError in IR: %s" err; exit 0) in
   match !action with
-    Parse -> 
-      let ast = try Some (Parser.program (deflate Scanner.token) lexbuf) with Failure err -> Printf.fprintf !out_channel "\nError: %s\n" err; None in
-      (
-        match ast with
-            Some s -> Printf.fprintf !out_channel "\n%s\n" (Ast.string_of_program s)
-          | None -> ()
-      )
-  | Semantics -> 
-      let ast = Parser.program (deflate Scanner.token) lexbuf in
-      Printf.fprintf !out_channel "\n%s\n" (Ast.string_of_program ast);
-      let sast = try Some (Semant.check ast) with Failure err -> Printf.fprintf !out_channel "\nError: %s" err; None in
-      Printf.fprintf !out_channel "\n%s\n" (
-        match sast with
-            Some _ -> "Passed semantics check"
-          | None -> "Failed semantics check"
-      )
-  | Ir ->
-      let ast = Parser.program (deflate Scanner.token) lexbuf in
-      let sast = Semant.check ast in
-      let ir = Irgen.translate sast in
-      Printf.fprintf !out_channel "\n%s\n" (Llvm.string_of_llmodule ir)
-  | Compile ->
-      let ast = Parser.program (deflate Scanner.token) lexbuf in
-      let sast = Semant.check ast in
-      let ir = Irgen.translate sast in
-      Llvm_analysis.assert_valid_module ir;
-      Printf.fprintf !out_channel "\n%s\n" (Llvm.string_of_llmodule ir)
+      Parse -> Printf.fprintf !out_channel "\n%s\n" (Ast.string_of_program (get_ast ()))
+    | Semantics -> 
+        let ast = get_ast () in
+        Printf.fprintf !out_channel "\n%s\n" (Ast.string_of_program ast);
+        let _ = get_sast ast in
+        Printf.fprintf !out_channel "\n%s\n" "Passed semantics check"
+    | Ir ->
+        let ast = get_ast () in
+        let sast = get_sast ast in
+        let ir = get_ir sast in
+        Printf.fprintf !out_channel "\n%s\n" (Llvm.string_of_llmodule ir)
+    | Compile ->
+        let ast = get_ast () in
+        let sast = get_sast ast in
+        let ir = get_ir sast in
+        Llvm_analysis.assert_valid_module ir;
+        Printf.fprintf !out_channel "\n%s\n" (Llvm.string_of_llmodule ir)
