@@ -34,6 +34,8 @@ let translate (binds, sfuncs): L.llmodule =
 
   let printf_t : L.lltype = L.var_arg_function_type void_t [| L.pointer_type i8_t |] in
   let printf_func : L.llvalue = L.declare_function "printf" printf_t mdl in
+  let scanf_t : L.lltype = L.var_arg_function_type void_t [| L.pointer_type i8_t |] in
+  let scanf_func : L.llvalue = L.declare_function "scanf" scanf_t mdl in
 
   let all_funcs = Hashtbl.create (List.length sfuncs) in
   let add_func fn =
@@ -48,16 +50,20 @@ let translate (binds, sfuncs): L.llmodule =
     let (the_func, _) = Hashtbl.find all_funcs fn.sfname in
     let builder = L.builder_at_end context (L.entry_block the_func) in
 
-    let number_format = L.build_global_stringptr "%g\n" "fmt" builder
+    let number_format = L.build_global_stringptr "%g" "fmt" builder 
+    and scan_number_format = L.build_global_stringptr "%lf" "fmt" builder 
     and bool_format = L.build_global_stringptr "%d\n" "fmt" builder
+    and scan_bool_format = L.build_global_stringptr "%d" "fmt" builder
     and char_format = L.build_global_stringptr "%c\n" "fmt" builder
-    and string_format = L.build_global_stringptr "%s\n" "fmt" builder in
-    let format_string_of_dtype typ = ( 
+    and scan_char_format = L.build_global_stringptr "%c" "fmt" builder
+    and string_format = L.build_global_stringptr "%s\n" "fmt" builder 
+    and scan_string_format = L.build_global_stringptr "%s" "fmt" builder in
+    let format_string_of_dtype typ scan = ( 
       match typ with
-          Number -> number_format
-        | Bool -> bool_format
-        | Char -> char_format
-        | String -> string_format
+          Number -> if scan then scan_number_format else number_format
+        | Bool -> if scan then scan_bool_format else bool_format
+        | Char -> if scan then scan_char_format else char_format
+        | String -> if scan then scan_string_format else string_format
         | _ -> raise (Failure "unimplemented")
     ) in
 
@@ -105,7 +111,17 @@ let translate (binds, sfuncs): L.llmodule =
               | Neg -> L.build_fneg
               | _   -> raise (Failure "unimplemented")
           ) e' "tmp" builder
-      | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) ; (build_expr builder e) |] "" builder
+      | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false ; (build_expr builder e) |] "" builder
+      | SCall ("inputn", [dest]) -> 
+          (match dest with
+              (_, SId (id, sc)) -> let dest_ptr = Hashtbl.find (List.nth !scopes sc) id in
+              L.build_call scanf_func [| format_string_of_dtype Number true ; dest_ptr |] "" builder
+            | _ -> raise (Failure "invalid input"))
+      | SCall ("inputc", [dest]) -> 
+          (match dest with
+              (_, SId (id, sc)) -> let dest_ptr = Hashtbl.find (List.nth !scopes sc) id in
+              L.build_call scanf_func [| format_string_of_dtype Char true ; dest_ptr |] "" builder
+            | _ -> raise (Failure "invalid input"))
       | SCall (id, params) -> 
           let (fdef, fn') = Hashtbl.find all_funcs id in
           let llargs = List.rev (List.map (build_expr builder) (List.rev params)) in
