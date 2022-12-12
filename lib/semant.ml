@@ -49,7 +49,6 @@ let check (binds, funcs, stmts): sprogram =
   Hashtbl.add sfuncs "say" ([(Any, "arg")], None);
   Hashtbl.add sfuncs "inputc" ([(Char, "arg")], None);
   Hashtbl.add sfuncs "inputn" ([(Number, "arg")], None);
-  Hashtbl.add sfuncs "inputs" ([(String, "arg")], None);
   let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}] in
   Hashtbl.add sfuncs "main" ([], None);
 
@@ -105,8 +104,8 @@ let check (binds, funcs, stmts): sprogram =
           ) passed_params fn_params;
           (fn_rtype, SCall (id, List.map check_expr passed_params))
       | Elem _ -> raise (Failure unimplemented_err)
-
     in
+
     let rec check_stmt = function
         Expr exp -> SExpr (check_expr exp)
       | Assign (typ, id, exp) -> 
