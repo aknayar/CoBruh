@@ -5,11 +5,13 @@ let dangling_code_err name = "function " ^ name ^ " has code that appears after 
 let duplicate_id_err name = "variable name " ^ name ^ " already exists in scope"
 let duplicate_func_err name = "function name " ^ name ^ " already exists"
 let duplicate_param_name_err name = "function parameters must have unique names, but " ^ name ^ " appears multiple times"
+let inconsistent_array_err name exp act = "array " ^ name ^ " expects type " ^ string_of_dtype exp ^ " but got type " ^ string_of_dtype act
+let invalid_array_alloc_err name typ = "array allocation for " ^ name ^ " expects number but got " ^ string_of_dtype typ 
 let invalid_assignment_err name = "variable type does not match assigned value for " ^ name
 let invalid_bop_args_err op = "invalid arguments for binary operator " ^ op
-let invalid_cond_loop_err typ = "conditional loop must take in boolean, but " ^ typ ^ " is passed"
-let invalid_if_err typ = "if must take in boolean, but " ^ typ ^ " is passed"
-let invalid_iter_loop_err typs = "iterative loop must take in (number, number, number), but (" ^ String.concat ", " typs ^ ") is passed"
+let invalid_cond_loop_err typ = "conditional loop expects boolean but got " ^ typ
+let invalid_if_err typ = "if expects boolean but got " ^ typ
+let invalid_iter_loop_err typs = "iterative loop expects (number, number, number) but  got (" ^ String.concat ", " typs ^ ")"
 let invalid_unop_args_err op = "invalid argument for unary operator " ^ op
 let mismatched_func_args_err name exp act = "function call to " ^ name ^ " expected " ^ exp ^ " but got " ^ act
 let mismatched_bop_args_err op = "mismatched arguments for binary operator " ^ op
@@ -23,6 +25,8 @@ let nonguaranteed_return_err name = "function " ^ name ^ " is not guaranteed to 
 let reserved_function_name_err name = "function name " ^ name ^ " is reserved"
 let return_in_none_err name typ = "function " ^ name ^ " has none return type but returns " ^ typ
 let unequal_func_args_count_err name exp act = "function call to " ^ name ^ " expects " ^ exp ^ " arguments but got " ^ act
+
+let internal_err = "internal error"
 let unimplemented_err = "unimplemented"
   
 let reserved_funcs = [("main", ([], None)); ("say", ([(Any, "arg")], None)); 
@@ -57,6 +61,9 @@ let check (binds, funcs, stmts): sprogram =
       | BoolLit bl -> (Bool, SBoolLit bl)
       | CharLit chr -> (Char, SCharLit chr)
       | StringLit str -> (String, SStringLit str)
+      | ArrayLit arr -> 
+          if List.length arr = 0 then raise (Failure internal_err)
+          else let sarr = List.map check_expr arr in (fst (List.hd sarr), SArray sarr)
       | Id id -> 
           let rec find_id ind sc = 
             match sc with
@@ -115,6 +122,16 @@ let check (binds, funcs, stmts): sprogram =
           if fst sexpr' = None then raise (Failure (none_assignment_err id))
           else if fst sexpr' != typ then raise (Failure (invalid_assignment_err id))
           else
+            (
+              match snd sexpr' with
+                  SArray arr -> 
+                    List.iter (
+                      fun item ->
+                        if fst item != fst sexpr' then raise (Failure (inconsistent_array_err id (fst sexpr') (fst item)))
+                        else ()
+                    ) arr
+                | _ -> ()
+            );
             let curr_scope = List.hd !scopes in
             if Hashtbl.mem curr_scope id then
               let prev_dtype = Hashtbl.find curr_scope id in
@@ -126,6 +143,16 @@ let check (binds, funcs, stmts): sprogram =
           let curr_dtype = fst sexpr' in
           if curr_dtype = None then raise (Failure (none_assignment_err id))
           else
+            (
+              match snd sexpr' with
+                  SArray arr -> 
+                    List.iter (
+                      fun item -> 
+                        if fst item != curr_dtype then raise (Failure (inconsistent_array_err id curr_dtype (fst item)))
+                        else ()
+                      ) arr
+                | _ -> ()
+            );
             let rec find_assign ind sc = 
               match sc with
                   [] -> Hashtbl.add (List.hd !scopes) id (fst sexpr'); SInit (id, sexpr')
@@ -135,9 +162,10 @@ let check (binds, funcs, stmts): sprogram =
                       else SReassign (id, ind, sexpr') 
                     else find_assign (ind + 1) tl
             in find_assign 0 !scopes
-      | Alloc _ -> raise (Failure unimplemented_err)
-      | AllocAssign _ -> raise (Failure unimplemented_err)
-      | AllocInferAssign _ -> raise (Failure unimplemented_err)
+      | Alloc (typ, id, n) -> 
+          let size = check_expr n in 
+          if fst size != Number then raise (Failure (invalid_array_alloc_err id (fst size)))
+          else SAlloc (typ, id, size)
       | If (prd, if_block, else_block) -> 
           let prd_sexpr = check_expr prd in
           if fst prd_sexpr != Bool then raise (Failure (invalid_if_err (string_of_dtype (fst prd_sexpr))))
