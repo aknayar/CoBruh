@@ -32,6 +32,7 @@ type expr =
   | BoolLit of bool 
   | CharLit of char 
   | StringLit of string 
+  | ArrayLit of expr list
   | Id of string 
   | Binop of expr * bop * expr
   | Unop of uop * expr
@@ -43,8 +44,8 @@ type stmt =
   | Assign of dtype * string * expr
   | InferAssign of string * expr
   | Alloc of dtype * string * expr
-  | AllocAssign of dtype * string * expr list
-  | AllocInferAssign of string * expr list
+  (* | AllocAssign of dtype * string * expr list
+  | AllocInferAssign of string * expr list *)
   | If of expr * stmt list * stmt list
   | IterLoop of string * expr * expr * expr * stmt list
   | CondLoop of expr * stmt list
@@ -102,6 +103,7 @@ let rec string_of_expr = function
   | BoolLit b -> if b then "true" else "false"
   | CharLit c -> "'" ^ Char.escaped c ^ "'"
   | StringLit s -> "\"" ^ s ^ "\""
+  | ArrayLit a -> "[" ^ String.concat ", " (List.map string_of_expr a) ^ "]"
   | Id id -> id
   | Binop (e1, op, e2) -> string_of_expr e1 ^ " " ^ string_of_bop op ^ " " ^ string_of_expr e2
   | Unop (op, e) -> (match op with
@@ -116,8 +118,6 @@ let rec string_of_stmt s =
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ "\n"
   | InferAssign (id, e) -> id ^ " is " ^ string_of_expr e ^ "\n"
   | Alloc (t, id, n) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^"]\n"
-  | AllocAssign (t, id, n, a) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^ "] is [" ^ String.concat ", " (List.map string_of_expr a) ^ "]\n"
-  | AllocInferAssign (id, n, a) -> id ^ "[" ^ string_of_expr n ^ "]" ^ " is [" ^  String.concat ", " (List.map string_of_expr a) ^ "]\n"
   | Expr ex -> string_of_expr ex ^ "\n"
   | If (e, s1, s2) ->
       let if_str = "if " ^ string_of_expr e ^ ":\n" in
