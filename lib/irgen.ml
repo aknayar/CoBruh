@@ -10,6 +10,7 @@ let translate (binds, sfuncs): L.llmodule =
   let f_t = L.double_type context 
   and i1_t = L.i1_type context 
   and i8_t = L.i8_type context 
+  and i32_t = L.i32_type context
   and void_t = L.void_type context in
 
   let lltype_of_dtype = function
@@ -84,6 +85,7 @@ let translate (binds, sfuncs): L.llmodule =
       | SBoolLit b -> L.const_int (lltype_of_dtype Bool) (if b then 1 else 0)
       | SCharLit c -> L.const_int (lltype_of_dtype Char) (Char.code c)
       | SStringLit s -> L.build_global_stringptr s "tmp" builder
+      | SArray arr -> L.build_array_malloc (lltype_of_dtype (fst (List.hd arr))) (L.const_int i32_t (List.length arr)) "tmp" builder
       | SId (id, sc) -> L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder
       | SBinop (e1, op, e2) ->
           let e1' = build_expr builder e1
@@ -134,7 +136,12 @@ let translate (binds, sfuncs): L.llmodule =
     let rec build_stmt builder = function
         SExpr sexp -> ignore (build_expr builder sexp); builder
       | SInit (id, sexp) -> 
-          let local = L.build_alloca (lltype_of_dtype (fst sexp)) id builder
+          let typ = fst sexp in
+          let local = L.build_alloca (
+            match snd sexp with 
+                SArray _ -> L.pointer_type (lltype_of_dtype typ)
+              | _ -> lltype_of_dtype typ
+          ) id builder
           in Hashtbl.add (List.hd !scopes) id local;
           let sexp' = build_expr builder sexp in
           ignore (L.build_store sexp' local builder); builder
