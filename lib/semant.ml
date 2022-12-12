@@ -47,6 +47,7 @@ let check (binds, funcs, stmts): sprogram =
       else Hashtbl.add sfuncs fn.fname (fn.params, fn.rtype)
   ) funcs;
   Hashtbl.add sfuncs "say" ([(Any, "arg")], None);
+  Hashtbl.add sfuncs "shout" ([(Any, "arg")], None);
   Hashtbl.add sfuncs "inputc" ([(Char, "arg")], None);
   Hashtbl.add sfuncs "inputn" ([(Number, "arg")], None);
   let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}] in
