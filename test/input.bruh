@@ -1,4 +1,4 @@
-define gcd(number primes, number count, number cand -> string):
+define primes(number primes, number count, number cand -> string):
   loop count < primes:
     if cand < 4:
       count is count + 1
@@ -24,5 +24,23 @@ define say_hi(number it -> none):
     say("Hello world")
     say_hi(it - 1)
 
-say(gcd(10, 0, 2))
+number small
+number gcd
+define gcd(number x, number y -> number):
+  if x < y:
+    small is x
+  else:
+    small is y
+  number i is 1
+  loop i < small + 1:
+    if x % i == 0 and y % i == 0:
+      gcd is i
+    i is i + 1
+  return gcd
+
+number a
+number b
+inputn(a)
+inputn(b)
+say(gcd(a, b))
 say_hi(5)
