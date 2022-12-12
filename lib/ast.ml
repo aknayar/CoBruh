@@ -3,6 +3,7 @@ type dtype =
   | Bool 
   | Char 
   | String 
+  | Array of dtype * int
   | None
   | Any
 
@@ -78,6 +79,7 @@ let string_of_dtype = function
   | Bool -> "boolean"
   | Char -> "character"
   | String -> "string"
+  | Array -> 
   | None -> "none"
   | Any -> "any"
 
