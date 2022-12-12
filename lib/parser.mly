@@ -111,8 +111,8 @@ stmt:
   | dtype ID ASSIGN expr EOL                                                         { Assign ($1, $2, $4) } 
   | ID ASSIGN expr EOL                                                               { InferAssign ($1, $3) }
   | dtype ID LSQUARE expr RSQUARE EOL                                                { Alloc ($1, $2, $4) }
-  | dtype ID LSQUARE expr RSQUARE ASSIGN LSQUARE expr_list RSQUARE EOL               { AllocAssign ($1, $2, $4, $8) }
-  | ID LSQUARE expr RSQUARE ASSIGN LSQUARE expr_list RSQUARE EOL                     { AllocInferAssign ($1, $3, $7) }
+  | dtype ID LSQUARE RSQUARE ASSIGN LSQUARE expr_list RSQUARE EOL                    { AllocAssign ($1, $2, $7) }
+  | ID LSQUARE RSQUARE ASSIGN LSQUARE expr_list RSQUARE EOL                          { AllocInferAssign ($1, $6) }
   | IF expr COLON EOL INDENT stmt_list DEDENT                                        { If ($2, $6, []) }
   | IF expr COLON EOL INDENT stmt_list DEDENT ELSE COLON EOL INDENT stmt_list DEDENT { If ($2, $6, $12) }
   | LOOP ID IN expr TO expr loop_by COLON EOL INDENT stmt_list DEDENT                { IterLoop ($2, $4, $6, $7, $11) }
