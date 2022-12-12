@@ -36,7 +36,9 @@ let translate (binds, sfuncs): L.llmodule =
   let printf_func : L.llvalue = L.declare_function "printf" printf_t mdl in
   let scanf_t : L.lltype = L.var_arg_function_type void_t [| L.pointer_type i8_t |] in
   let scanf_func : L.llvalue = L.declare_function "scanf" scanf_t mdl in
-
+  let getchar_t : L.lltype = L.var_arg_function_type void_t [||] in
+  let getchar_func : L.llvalue = L.declare_function "getchar" getchar_t mdl in
+  
   let all_funcs = Hashtbl.create (List.length sfuncs) in
   let add_func fn =
     let param_dtypes = Array.of_list (List.map (fun (typ, _) -> lltype_of_dtype typ) fn.sparams) in
@@ -73,7 +75,10 @@ let translate (binds, sfuncs): L.llmodule =
 
     let read_typ = function 
       (typ, SId (id, sc)) -> let dest_ptr = Hashtbl.find (List.nth !scopes sc) id in
-        L.build_call scanf_func [| format_string_of_dtype typ true ; dest_ptr |] "" builder
+        let ret = L.build_call scanf_func [| format_string_of_dtype typ true ; dest_ptr |] "" builder in
+        ignore(L.build_call getchar_func [||] "" builder);
+        ret
+
     | _ -> raise (Failure "invalid input") in
 
     scopes := body_scope::(!scopes);
