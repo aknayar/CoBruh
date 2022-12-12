@@ -55,7 +55,7 @@ let translate (binds, sfuncs): L.llmodule =
     let number_format scan nl = L.build_global_stringptr (if scan then "%lf" else "%g" ^ (if nl then "\n" else "")) "fmt" builder 
     and bool_format scan nl = L.build_global_stringptr (if scan then "%d" else "%d" ^ (if nl then "\n" else "")) "fmt" builder
     and char_format scan nl = L.build_global_stringptr (if scan then "%c" else "%c" ^ (if nl then "\n" else "")) "fmt" builder
-    and string_format nl scan = L.build_global_stringptr (if scan then "%s" else "%s" ^ (if nl then "\n" else "")) "fmt" builder in
+    and string_format scan nl  = L.build_global_stringptr (if scan then "%s" else "%s" ^ (if nl then "\n" else "")) "fmt" builder in
     let format_string_of_dtype typ scan nl = ( 
       match typ with
           Number -> number_format scan nl

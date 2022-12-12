@@ -21,7 +21,7 @@ define primes(number primes, number count, number cand -> string):
 
 define say_hi(number it -> none):
   if it > 0:
-    say("Hello world")
+    shout("Hello world")
     say_hi(it - 1)
 
 number small
