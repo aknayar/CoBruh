@@ -25,7 +25,8 @@ let return_in_none_err name typ = "function " ^ name ^ " has none return type bu
 let unequal_func_args_count_err name exp act = "function call to " ^ name ^ " expects " ^ exp ^ " arguments but got " ^ act
 let unimplemented_err = "unimplemented"
   
-let reserved_funcs = ["main"; "say"]
+let reserved_funcs = [("main", ([], None)); ("say", ([(Any, "arg")], None)); 
+                      ("inputc", ([(Char, "arg")], None)); ("inputn", ([(Number, "arg")], None))]
 
 let check (binds, funcs, stmts): sprogram =
 
@@ -41,16 +42,12 @@ let check (binds, funcs, stmts): sprogram =
   let sfuncs = Hashtbl.create (List.length funcs + 2) in
   List.iter (
     fun fn -> 
-      if List.exists ((=) fn.fname) reserved_funcs then raise (Failure (reserved_function_name_err fn.fname))
+      if List.exists (fun rfn -> fn.fname = fst rfn) reserved_funcs then raise (Failure (reserved_function_name_err fn.fname))
       else if Hashtbl.mem sfuncs fn.fname then raise (Failure (duplicate_func_err fn.fname))
       else Hashtbl.add sfuncs fn.fname (fn.params, fn.rtype)
   ) funcs;
-  Hashtbl.add sfuncs "say" ([(Any, "arg")], None);
-  Hashtbl.add sfuncs "shout" ([(Any, "arg")], None);
-  Hashtbl.add sfuncs "inputc" ([], Char);
-  Hashtbl.add sfuncs "inputn" ([], Number);
   let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}] in
-  Hashtbl.add sfuncs "main" ([], None);
+  List.iter (fun rfn -> Hashtbl.add sfuncs (fst rfn) (snd rfn)) reserved_funcs;
 
   let check_func fn = 
     let scopes = ref [globals] in
