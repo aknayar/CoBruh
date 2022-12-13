@@ -3,6 +3,7 @@ type dtype =
   | Bool 
   | Char 
   | String 
+  | Array of dtype
   | None
   | Any
 
@@ -72,11 +73,12 @@ type program = bind list * func list * stmt list
 
 let curr_indent_level = ref 0
 
-let string_of_dtype = function
+let rec string_of_dtype = function
     Number -> "number"
   | Bool -> "boolean"
   | Char -> "character"
   | String -> "string"
+  | Array typ -> string_of_dtype typ ^ "[]"
   | None -> "none"
   | Any -> "any"
 

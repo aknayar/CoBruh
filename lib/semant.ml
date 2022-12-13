@@ -63,7 +63,7 @@ let check (binds, funcs, stmts): sprogram =
       | StringLit str -> (String, SStringLit str)
       | ArrayLit arr -> 
           if List.length arr = 0 then raise (Failure internal_err)
-          else let sarr = List.map check_expr arr in (fst (List.hd sarr), SArray sarr)
+          else let sarr = List.map check_expr arr in (Array (fst (List.hd sarr)), SArray sarr)
       | Id id -> 
           let rec find_id ind sc = 
             match sc with
@@ -119,9 +119,10 @@ let check (binds, funcs, stmts): sprogram =
         Expr exp -> SExpr (check_expr exp)
       | Assign (typ, id, exp) -> 
           let sexpr' = check_expr exp in 
-          if fst sexpr' = None then raise (Failure (none_assignment_err id))
-          else if fst sexpr' != typ then raise (Failure (invalid_assignment_err id))
-          else
+          let typ' = fst sexpr' in
+          if typ' = None then raise (Failure (none_assignment_err id))
+          else if typ' != typ then raise (Failure (invalid_assignment_err id))
+          else 
             (
               match snd sexpr' with
                   SArray arr -> 
@@ -165,7 +166,13 @@ let check (binds, funcs, stmts): sprogram =
       | Alloc (typ, id, n) -> 
           let size = check_expr n in 
           if fst size != Number then raise (Failure (invalid_array_alloc_err id (fst size)))
-          else SAlloc (typ, id, size)
+          else 
+            let curr_scope = List.hd !scopes in
+            if Hashtbl.mem curr_scope id then
+              let prev_dtype = Hashtbl.find curr_scope id in
+              if prev_dtype != typ then raise (Failure (invalid_assignment_err id))
+              else SReassign (id, 0, sexpr')
+            else let _ = Hashtbl.add curr_scope id (fst sexpr') in SInit (id, sexpr')
       | If (prd, if_block, else_block) -> 
           let prd_sexpr = check_expr prd in
           if fst prd_sexpr != Bool then raise (Failure (invalid_if_err (string_of_dtype (fst prd_sexpr))))

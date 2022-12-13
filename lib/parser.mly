@@ -111,7 +111,7 @@ stmt:
   | dtype ID ASSIGN expr EOL                                                         { Assign ($1, $2, $4) } 
   | ID ASSIGN expr EOL                                                               { InferAssign ($1, $3) }
   | dtype ID LSQUARE expr RSQUARE EOL                                                { Alloc ($1, $2, $4) }
-  | dtype ID ASSIGN LSQUARE expr_list RSQUARE EOL                                    { Assign ($1, $2, ArrayLit $5) }
+  | dtype ID ASSIGN LSQUARE expr_list RSQUARE EOL                                    { Assign (Array $1, $2, ArrayLit $5) }
   | ID ASSIGN LSQUARE expr_list RSQUARE EOL                                          { InferAssign ($1, ArrayLit $4) }
   | IF expr COLON EOL INDENT stmt_list DEDENT                                        { If ($2, $6, []) }
   | IF expr COLON EOL INDENT stmt_list DEDENT ELSE COLON EOL INDENT stmt_list DEDENT { If ($2, $6, $12) }
