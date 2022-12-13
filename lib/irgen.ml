@@ -84,8 +84,15 @@ let translate (binds, sfuncs): L.llmodule =
         SNumberLit n -> L.const_float (lltype_of_dtype Number) n
       | SBoolLit b -> L.const_int (lltype_of_dtype Bool) (if b then 1 else 0)
       | SCharLit c -> L.const_int (lltype_of_dtype Char) (Char.code c)
-      | SStringLit s -> L.build_global_stringptr s "tmp" builder
-      | SArray arr -> L.build_array_malloc (lltype_of_dtype (fst (List.hd arr))) (L.const_int i32_t (List.length arr)) "tmp" builder
+      | SStringLit s -> L.build_global_stringptr s "str" builder
+      | SArray arr -> 
+          let arr' = L.build_array_malloc (lltype_of_dtype (fst (List.hd arr))) (L.const_int i32_t (List.length arr)) "arr" builder in
+          List.iteri (
+            fun ind item -> 
+              let item' = build_expr builder item in
+              let ind' = L.build_in_bounds_gep arr' [| L.const_int i32_t ind |] "ind" builder in
+              ignore (L.build_store item' ind' builder)
+          ) arr; arr'
       | SId (id, sc) -> L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder
       | SBinop (e1, op, e2) ->
           let e1' = build_expr builder e1
@@ -106,7 +113,7 @@ let translate (binds, sfuncs): L.llmodule =
               | Greater -> L.build_fcmp L.Fcmp.Ogt
               | Geq     -> L.build_fcmp L.Fcmp.Oge
               | _       -> raise (Failure "unimplemented")
-          ) e1' e2' "tmp" builder
+          ) e1' e2' "bop" builder
       | SUnop (op, e) ->
           let e' = build_expr builder e in
           (
