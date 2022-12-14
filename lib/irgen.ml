@@ -20,12 +20,12 @@ let translate (binds, sfuncs): L.llmodule =
     | String -> L.pointer_type i8_t
     | Array typ -> L.pointer_type (lltype_of_dtype typ)
     | None -> void_t
-    | _ -> raise (Failure "unimplemented 1") 
+    | _ -> raise (Failure "unimplemented") 
   in
   let default_value = function
       Number -> L.const_float (lltype_of_dtype Number) 0.0
     | (Bool | Char) as typ -> L.const_int (lltype_of_dtype typ) 0
-    | _ -> raise (Failure "unimplemented 2") 
+    | _ -> raise (Failure "unimplemented") 
   in
 
   let globals = Hashtbl.create (List.length binds) in
@@ -59,7 +59,7 @@ let translate (binds, sfuncs): L.llmodule =
         | Bool -> bool_format nl
         | Char -> char_format scan nl
         | String -> string_format nl
-        | _ -> raise (Failure "unimplemented 3")
+        | _ -> raise (Failure "unimplemented")
     ) in
 
     let body_scope = Hashtbl.create (List.length fn.sparams + List.length fn.sbody) in
@@ -127,7 +127,7 @@ let translate (binds, sfuncs): L.llmodule =
               | Leq     -> L.build_fcmp L.Fcmp.Ole
               | Greater -> L.build_fcmp L.Fcmp.Ogt
               | Geq     -> L.build_fcmp L.Fcmp.Oge
-              | _       -> raise (Failure "unimplemented 4")
+              | _       -> raise (Failure "unimplemented")
           ) e1' e2' "bop" builder
       | SUnop (op, e) ->
           let e' = build_expr builder e in
@@ -135,7 +135,7 @@ let translate (binds, sfuncs): L.llmodule =
             match op with
                 Not -> L.build_not
               | Neg -> L.build_fneg
-              | _   -> raise (Failure "unimplemented 5")
+              | _   -> raise (Failure "unimplemented")
           ) e' "tmp" builder
       | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false false ; (build_expr builder e) |] "" builder
       | SCall ("shout", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false true ; (build_expr builder e) |] "" builder
@@ -147,15 +147,15 @@ let translate (binds, sfuncs): L.llmodule =
           let res = if fn'.srtype = None then "" else id ^ "_result" in
           L.build_call fdef (Array.of_list llargs) res builder
       | SElem (id, sc, ind) -> 
-          let arr = Hashtbl.find (List.nth !scopes sc) id in
+          let arr = L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder in
           let loc = build_expr builder ind in
           let ind_op = L.int64_of_const (L.const_fptosi loc i32_t) in
           let ind' = (match ind_op with 
               Some act -> let act' = Int64.to_int act in if act' < 0  then raise (Failure "invalid array index") else act'
-            | None -> raise (Failure "invalid array size")
+            | None -> raise (Failure "internal error")
           ) in
-          let act_ind = L.build_in_bounds_gep arr [| L.const_int i32_t ind' |] "ind" builder in
-          L.build_load act_ind id builder
+          let elem = L.build_in_bounds_gep arr [| L.const_int i32_t ind' |] (id ^ "_ind") builder in
+          L.build_load elem (id ^ "_elem") builder
     in
 
     let add_terminal builder instr = 
@@ -175,6 +175,18 @@ let translate (binds, sfuncs): L.llmodule =
       | SReassign (id, sc, sexp) -> 
           let sexp' = build_expr builder sexp in
           ignore (L.build_store sexp' (Hashtbl.find (List.nth !scopes sc) id) builder); builder
+      | SArrayIndex (id, sc, ind, sexp) ->
+          let arr = L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder in
+          let loc = build_expr builder ind 
+          and sexp' = build_expr builder sexp in
+          let ind_op = L.int64_of_const (L.const_fptosi loc i32_t) in
+          let ind' = (
+            match ind_op with
+                Some act -> let act' = Int64.to_int act in if act' < 0  then raise (Failure "invalid array index") else act'
+              | None -> raise (Failure "internal error")
+          ) in
+          let elem = L.build_in_bounds_gep arr [| L.const_int i32_t ind' |] (id ^ "_ind") builder in
+          ignore (L.build_store sexp' elem builder); builder
       | SIf (prd, if_block, else_block) ->
           let bool_val = build_expr builder prd in
           let merge_bb = L.append_block context "merge" the_func in
@@ -206,7 +218,7 @@ let translate (binds, sfuncs): L.llmodule =
             if fn.srtype = None then L.build_ret_void builder
             else L.build_ret (build_expr builder sexp) builder
           ); builder
-      | _ -> raise (Failure "unimplemented 6")
+      | _ -> raise (Failure "unimplemented")
     and do_block scope bb block = 
       scopes := scope::(!scopes);
       let res = List.fold_left build_stmt (L.builder_at_end context bb) block in

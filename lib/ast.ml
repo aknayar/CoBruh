@@ -45,6 +45,7 @@ type stmt =
   | Assign of dtype * string * expr
   | InferAssign of string * expr
   | Alloc of dtype * string * expr
+  | ArrayIndex of string * expr * expr
   | If of expr * stmt list * stmt list
   | IterLoop of string * expr * expr * expr * stmt list
   | CondLoop of expr * stmt list
@@ -118,6 +119,7 @@ let rec string_of_stmt s =
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ "\n"
   | InferAssign (id, e) -> id ^ " is " ^ string_of_expr e ^ "\n"
   | Alloc (t, id, n) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^"]\n"
+  | ArrayIndex (id, ind, e) -> id ^ "[" ^ string_of_expr ind ^ "] is " ^ string_of_expr e ^ "\n"
   | Expr ex -> string_of_expr ex ^ "\n"
   | If (e, s1, s2) ->
       let if_str = "if " ^ string_of_expr e ^ ":\n" in

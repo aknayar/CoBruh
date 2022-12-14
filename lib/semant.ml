@@ -7,13 +7,14 @@ let duplicate_func_err name = "function name " ^ name ^ " already exists"
 let duplicate_param_name_err name = "function parameters must have unique names, but " ^ name ^ " appears multiple times"
 let inconsistent_array_err exp act = string_of_dtype exp ^ " array got type " ^ string_of_dtype act
 let invalid_array_alloc_err name typ = "array allocation for " ^ name ^ " expects number but got " ^ string_of_dtype typ 
-let invalid_array_index_arr name typ = "array index expects number, but " ^ name ^ " got " ^ string_of_dtype typ
-let invalid_assignment_err name = "variable type does not match assigned value for " ^ name
+let invalid_array_index_err name typ = "array index expects number, but " ^ name ^ " got " ^ string_of_dtype typ
+let invalid_array_indexing_err name typ = "indexing is for arrays, but " ^ name ^ " is " ^ string_of_dtype typ
+let invalid_assignment_err name = "variable type does not match assigned type for " ^ name
 let invalid_bop_args_err op = "invalid arguments for binary operator " ^ op
 let invalid_cond_loop_err typ = "conditional loop expects boolean but got " ^ typ
 let invalid_if_err typ = "if expects boolean but got " ^ typ
 let invalid_indexing_err id typ = "only arrays can be indexed, but " ^ id ^ " is " ^ string_of_dtype typ
-  let invalid_iter_loop_err typs = "iterative loop expects (number, number, number) but got (" ^ String.concat ", " typs ^ ")"
+let invalid_iter_loop_err typs = "iterative loop expects (number, number, number) but got (" ^ String.concat ", " typs ^ ")"
 let invalid_unop_args_err op = "invalid argument for unary operator " ^ op
 let mismatched_func_args_err name exp act = "function call to " ^ name ^ " expected " ^ exp ^ " but got " ^ act
 let mismatched_bop_args_err op = "mismatched arguments for binary operator " ^ op
@@ -70,7 +71,7 @@ let check (binds, funcs, stmts): sprogram =
             let typ = fst (List.hd sarr) in
             List.iter (
               fun item ->
-                if fst item != typ then raise (Failure (inconsistent_array_err typ (fst item)))
+                if fst item <> typ then raise (Failure (inconsistent_array_err typ (fst item)))
                 else ()
             ) sarr; (Array (fst (List.hd sarr)), SArray sarr)
       | Id id -> 
@@ -83,7 +84,7 @@ let check (binds, funcs, stmts): sprogram =
           let sexpr1 = ref (check_expr exp1) in let dtype1 = fst !sexpr1 in
           let sexpr2 = check_expr exp2 in let dtype2 = fst sexpr2 in
           let tmp_op = ref op in 
-          if dtype1 != dtype2 then raise (Failure (mismatched_bop_args_err (string_of_bop op)))
+          if dtype1 <> dtype2 then raise (Failure (mismatched_bop_args_err (string_of_bop op)))
           else let res_type = (
             match op with 
                 (Plus | Minus | Times | Div | Mod) when dtype1 = Number -> Number
@@ -109,21 +110,21 @@ let check (binds, funcs, stmts): sprogram =
           let (fn_params, fn_rtype) = 
             if not (Hashtbl.mem sfuncs id) then raise (Failure (missing_func_err id))
             else Hashtbl.find sfuncs id in 
-          if List.length passed_params != List.length fn_params then raise (
+          if List.length passed_params <> List.length fn_params then raise (
             Failure (unequal_func_args_count_err id  (string_of_int (List.length fn_params)) (string_of_int (List.length passed_params)))
           )
           else List.iter2 (
             fun passed_param fn_param -> 
               let (passed_dtype, _) = check_expr passed_param in 
               if passed_dtype = None then raise (Failure (none_arg_err id))
-              else if passed_dtype != fst fn_param && not (fst fn_param = Any) then raise (
+              else if passed_dtype <> fst fn_param && not (fst fn_param = Any) then raise (
                 Failure (mismatched_func_args_err id (string_of_dtype (fst fn_param)) (string_of_dtype passed_dtype))
               )
           ) passed_params fn_params;
           (fn_rtype, SCall (id, List.map check_expr passed_params))
       | Elem (id, ind) -> 
           let ind' = check_expr ind in 
-          if fst ind' != Number then raise (Failure (invalid_array_index_arr id (fst ind')))
+          if fst ind' <> Number then raise (Failure (invalid_array_index_err id (fst ind')))
           else 
             let rec find_id sc_ind sc = 
               match sc with
@@ -145,11 +146,11 @@ let check (binds, funcs, stmts): sprogram =
           let sexpr' = check_expr exp in 
           let typ' = fst sexpr' in
           if typ' = None then raise (Failure (none_assignment_err id))
-          else if typ' != typ then raise (Failure (invalid_assignment_err id))
+          else if typ' <> typ then raise (Failure (invalid_assignment_err id ^ string_of_dtype typ' ^ string_of_dtype typ))
           else 
             let curr_scope = List.hd !scopes in
             if Hashtbl.mem curr_scope id then
-              if Hashtbl.find curr_scope id != typ then raise (Failure (invalid_assignment_err id))
+              if Hashtbl.find curr_scope id <> typ then raise (Failure (invalid_assignment_err id))
               else SReassign (id, 0, sexpr')
             else let _ = Hashtbl.add curr_scope id (fst sexpr') in SInit (id, sexpr')
       | InferAssign (id, exp) -> 
@@ -162,22 +163,38 @@ let check (binds, funcs, stmts): sprogram =
                   [] -> Hashtbl.add (List.hd !scopes) id (fst sexpr'); SInit (id, sexpr')
                 | hd::tl -> 
                     if Hashtbl.mem hd id then 
-                      if Hashtbl.find hd id != curr_dtype then raise (Failure (invalid_assignment_err id))
+                      if Hashtbl.find hd id <> curr_dtype then raise (Failure (invalid_assignment_err id))
                       else SReassign (id, ind, sexpr') 
                     else find_assign (ind + 1) tl
             in find_assign 0 !scopes
       | Alloc (typ, id, n) -> 
           let size = check_expr n in 
-          if fst size != Number then raise (Failure (invalid_array_alloc_err id (fst size)))
+          if fst size <> Number then raise (Failure (invalid_array_alloc_err id (fst size)))
           else 
             let curr_scope = List.hd !scopes in
             if Hashtbl.mem curr_scope id then
-              if Hashtbl.find curr_scope id != typ then raise (Failure (invalid_assignment_err id))
+              if Hashtbl.find curr_scope id <> typ then raise (Failure (invalid_assignment_err id))
               else SReassign (id, 0, (Array typ, SDefaultArray (typ, size)))
             else let _ = Hashtbl.add curr_scope id (Array typ) in SInit (id, (Array typ, SDefaultArray (typ, size)))
+      | ArrayIndex (id, ind, exp) -> 
+          let ind' = check_expr ind and exp' = check_expr exp in
+          if fst ind' <> Number then raise (Failure "something")
+          else (
+            let rec find_id sc_ind sc = 
+              match sc with
+                  [] -> raise (Failure (missing_id_err id))
+                | hd::tl -> 
+                    if Hashtbl.mem hd id then (
+                      match Hashtbl.find hd id with 
+                          Array typ -> if typ <> fst exp' then raise (Failure (invalid_assignment_err id)) else SArrayIndex (id, sc_ind, ind', exp')
+                        | _ as typ -> raise (Failure (invalid_array_indexing_err id typ))
+                    ) 
+                    else find_id (sc_ind + 1) tl
+            in find_id 0 !scopes
+          )
       | If (prd, if_block, else_block) -> 
           let prd_sexpr = check_expr prd in
-          if fst prd_sexpr != Bool then raise (Failure (invalid_if_err (string_of_dtype (fst prd_sexpr))))
+          if fst prd_sexpr <> Bool then raise (Failure (invalid_if_err (string_of_dtype (fst prd_sexpr))))
           else 
             let if_sstmts = check_block (Hashtbl.create (List.length if_block)) if_block in
             let else_sstmts = check_block (Hashtbl.create (List.length else_block)) else_block in
@@ -186,7 +203,7 @@ let check (binds, funcs, stmts): sprogram =
           let start_sexpr = check_expr st in
           let end_sexpr = check_expr en in
           let by_sexpr = check_expr by in 
-          if fst start_sexpr != Number || fst end_sexpr != Number || fst by_sexpr != Number 
+          if fst start_sexpr <> Number || fst end_sexpr <> Number || fst by_sexpr <> Number 
             then raise (Failure (
               invalid_iter_loop_err [string_of_dtype (fst start_sexpr); string_of_dtype (fst end_sexpr); string_of_dtype (fst by_sexpr)]))
           else 
@@ -196,7 +213,7 @@ let check (binds, funcs, stmts): sprogram =
             SIterLoop (id, start_sexpr, end_sexpr, by_sexpr, block_sstmts)
       | CondLoop (prd, block) ->
           let prd_sexpr = check_expr prd in
-          if fst prd_sexpr != Bool then raise (Failure (invalid_cond_loop_err (string_of_dtype (fst prd_sexpr))))
+          if fst prd_sexpr <> Bool then raise (Failure (invalid_cond_loop_err (string_of_dtype (fst prd_sexpr))))
           else
             let block_sstmts = check_block (Hashtbl.create (List.length block)) block in
             SCondLoop (prd_sexpr, block_sstmts)
@@ -226,7 +243,7 @@ let check (binds, funcs, stmts): sprogram =
                 SReturn rtyp -> (
                   match fn.rtype with
                       None -> raise (Failure (return_in_none_err fn.fname (string_of_dtype (fst rtyp))))
-                    | _ as typ -> if fst rtyp != typ then raise (Failure (mismatched_return_err fn.fname)) else true
+                    | _ as typ -> if fst rtyp <> typ then raise (Failure (mismatched_return_err fn.fname)) else true
                 )
               | SIf (_, if_sstmts, else_sstmts) -> (ensure_valid_return if_sstmts) && (ensure_valid_return else_sstmts)
               | SIterLoop (_, _, _, _, block_sstmts) -> let _ = ensure_valid_return block_sstmts in false
@@ -234,7 +251,7 @@ let check (binds, funcs, stmts): sprogram =
               | _ -> false
       ) false block in
     let has_valid_return = ensure_valid_return body_sstmts in
-    if not has_valid_return && fn.rtype != None then raise (Failure (nonguaranteed_return_err fn.fname))
+    if not has_valid_return && fn.rtype <> None then raise (Failure (nonguaranteed_return_err fn.fname))
     else ();
     {
       sfname = fn.fname;
