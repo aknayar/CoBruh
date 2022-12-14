@@ -48,8 +48,8 @@ let check (binds, funcs, stmts): sprogram =
   ) funcs;
   Hashtbl.add sfuncs "say" ([(Any, "arg")], None);
   Hashtbl.add sfuncs "shout" ([(Any, "arg")], None);
-  Hashtbl.add sfuncs "inputc" ([(Char, "arg")], None);
-  Hashtbl.add sfuncs "inputn" ([(Number, "arg")], None);
+  Hashtbl.add sfuncs "inputc" ([], Char);
+  Hashtbl.add sfuncs "inputn" ([], Number);
   let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}] in
   Hashtbl.add sfuncs "main" ([], None);
 
