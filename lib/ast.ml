@@ -142,7 +142,7 @@ let rec string_of_stmt s =
       let _  = curr_indent_level := !curr_indent_level - 1 in
       loop_str ^ loop_stmts
   | Return ex -> 
-      "return " ^ string_of_expr ex ^ ".\n"
+      "return " ^ string_of_expr ex ^ "\n"
   | Continue -> "continue\n"
   | Stop -> "stop\n" in
       String.concat "" (List.init (!curr_indent_level) (fun _ -> "  ")) ^ (string_of_stmt_raw s)
