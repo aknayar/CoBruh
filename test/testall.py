@@ -17,12 +17,13 @@ for file in os.listdir(directory):
         result = subprocess.run(f"dune exec -- CoBruh -c {file_loc}".split(), stdout=subprocess.PIPE)
         result = result.stdout.decode("utf-8") 
 
-        ans = ''
+        ans = None
         with open(file_ans_loc, 'r') as f:
             ans = f.read()
         
         if not ans.strip() == result.strip():
-            raise Exception("Wrong TC, please check code")
+            raise Exception(f"Incorrect output on test case: {file_loc}\nOutput: {result}Expected output: {ans}")
+
     if filename.endswith(".out"):
         file_ans_loc = os.path.join("./tests/", filename)
         file_loc = os.path.join("./tests/", '.'.join(filename.split('.')[:-1] + ["bruh"]))
@@ -33,16 +34,9 @@ for file in os.listdir(directory):
         result = subprocess.run(f"lli main.ll".split(), stdout=subprocess.PIPE)
         result = result.stdout.decode("utf-8") 
 
-        ans = ''
+        ans = None
         with open(file_ans_loc, 'r') as f:
             ans = f.read()
       
         if not ans.strip() == result.strip():
-            raise Exception("Wrong TC, please check code")
-     
-
-
-
-
-
-
+            raise Exception(f"Incorrect output on test case: {file_loc}\nOutput: {result}Expected output: {ans}")
