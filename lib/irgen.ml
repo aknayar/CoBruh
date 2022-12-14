@@ -36,8 +36,6 @@ let translate (binds, sfuncs): L.llmodule =
   let printf_func : L.llvalue = L.declare_function "printf" printf_t mdl in
   let scanf_t : L.lltype = L.var_arg_function_type void_t [| L.pointer_type i8_t |] in
   let scanf_func : L.llvalue = L.declare_function "scanf" scanf_t mdl in
-  let getchar_t : L.lltype = L.var_arg_function_type void_t [||] in
-  let getchar_func : L.llvalue = L.declare_function "getchar" getchar_t mdl in
   
   let all_funcs = Hashtbl.create (List.length sfuncs) in
   let add_func fn =
@@ -53,15 +51,15 @@ let translate (binds, sfuncs): L.llmodule =
     let builder = L.builder_at_end context (L.entry_block the_func) in
 
     let number_format scan nl = L.build_global_stringptr (if scan then "%lf" else "%g" ^ (if nl then "\n" else "")) "fmt" builder 
-    and bool_format scan nl = L.build_global_stringptr (if scan then "%d" else "%d" ^ (if nl then "\n" else "")) "fmt" builder
-    and char_format scan nl = L.build_global_stringptr (if scan then "%c" else "%c" ^ (if nl then "\n" else "")) "fmt" builder
-    and string_format scan nl  = L.build_global_stringptr (if scan then "%s" else "%s" ^ (if nl then "\n" else "")) "fmt" builder in
+    and bool_format nl = L.build_global_stringptr ("%d" ^ (if nl then "\n" else "")) "fmt" builder
+    and char_format scan nl = L.build_global_stringptr (if scan then " %c" else "%c" ^ (if nl then "\n" else "")) "fmt" builder
+    and string_format nl  = L.build_global_stringptr ("%s" ^ (if nl then "\n" else "")) "fmt" builder in
     let format_string_of_dtype typ scan nl = ( 
       match typ with
           Number -> number_format scan nl
-        | Bool -> bool_format scan nl
+        | Bool -> bool_format nl
         | Char -> char_format scan nl
-        | String -> string_format scan nl
+        | String -> string_format nl
         | _ -> raise (Failure "unimplemented")
     ) in
 
@@ -73,14 +71,12 @@ let translate (binds, sfuncs): L.llmodule =
       Hashtbl.add body_scope name local
     in List.iter2 add_param fn.sparams (Array.to_list (L.params the_func));
 
-    let read_typ = function 
-      (typ, SId (id, sc)) -> let dest_ptr = Hashtbl.find (List.nth !scopes sc) id in
-        let ret = L.build_call scanf_func [| format_string_of_dtype typ true false; dest_ptr |] "" builder in
-        ignore(L.build_call getchar_func [||] "" builder);
-        ret
-
-    | _ -> raise (Failure "invalid input") in
-
+    let read_typ typ = 
+      let scanin = L.build_alloca (lltype_of_dtype typ) "scanin" builder in
+      ignore (L.build_call scanf_func [| format_string_of_dtype typ true false; scanin |] "" builder);
+      L.build_load scanin "scanin" builder
+    
+    in
     scopes := body_scope::(!scopes);
 
     let rec build_expr builder (_, exp) = match exp with
@@ -119,10 +115,8 @@ let translate (binds, sfuncs): L.llmodule =
           ) e' "tmp" builder
       | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false false ; (build_expr builder e) |] "" builder
       | SCall ("shout", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false true ; (build_expr builder e) |] "" builder
-      | SCall ("inputc", [dest]) -> 
-          read_typ dest
-      | SCall ("inputn", [dest]) -> 
-          read_typ dest
+      | SCall ("inputc", []) -> read_typ Char
+      | SCall ("inputn", []) -> read_typ Number
       | SCall (id, params) -> 
           let (fdef, fn') = Hashtbl.find all_funcs id in
           let llargs = List.rev (List.map (build_expr builder) (List.rev params)) in

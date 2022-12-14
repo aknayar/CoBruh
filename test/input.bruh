@@ -1,46 +1,16 @@
-define primes(number primes, number count, number cand -> string):
-  loop count < primes:
-    if cand < 4:
-      count is count + 1
-      say(cand)
-    else:
-      number i is 2
-      boolean prime is true
-      loop i < cand:
-        if cand % i == 0:
-          prime is false
-        i is i + 1
-      if prime:
-        count is count + 1
-        say(cand)
-    cand is cand + 1
+define reverse(number n -> number):
+  if (n == 0):
+    return 0
+  number res is 0
+  loop n > 0:
+    res is res * 10 + n % 10
+    n is (n - n % 10) / 10
+  return res
 
-    # return "Unfinished"
-  
-  return "Done"
-
-define say_hi(number it -> none):
-  if it > 0:
-    shout("Hello world")
-    say_hi(it - 1)
-
-number small
-number gcd
-define gcd(number x, number y -> number):
-  if x < y:
-    small is x
-  else:
-    small is y
-  number i is 1
-  loop i < small + 1:
-    if x % i == 0 and y % i == 0:
-      gcd is i
-    i is i + 1
-  return gcd
-
-number a
-number b
-inputn(a)
-inputn(b)
-say(gcd(a, b))
-say_hi(5)
+number x
+say("Enter a number: ")
+x is inputn()
+say("The reverse of ")
+say(x)
+say(" is ")
+shout(reverse(x))
