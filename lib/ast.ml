@@ -113,12 +113,12 @@ let rec string_of_expr = function
 
 let rec string_of_stmt s = 
   let string_of_stmt_raw = function
-    Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ ".\n"
-  | InferAssign (id, e) -> id ^ " is " ^ string_of_expr e ^ ".\n"
-  | Alloc (t, id, n) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^"].\n"
-  | AllocAssign (t, id, n, a) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^ "] is [" ^ String.concat ", " (List.map string_of_expr a) ^ "].\n"
-  | AllocInferAssign (id, n, a) -> id ^ "[" ^ string_of_expr n ^ "]" ^ " is [" ^  String.concat ", " (List.map string_of_expr a) ^ "].\n"
-  | Expr ex -> string_of_expr ex ^ ".\n"
+    Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ "\n"
+  | InferAssign (id, e) -> id ^ " is " ^ string_of_expr e ^ "\n"
+  | Alloc (t, id, n) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^"]\n"
+  | AllocAssign (t, id, n, a) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^ "] is [" ^ String.concat ", " (List.map string_of_expr a) ^ "]\n"
+  | AllocInferAssign (id, n, a) -> id ^ "[" ^ string_of_expr n ^ "]" ^ " is [" ^  String.concat ", " (List.map string_of_expr a) ^ "]\n"
+  | Expr ex -> string_of_expr ex ^ "\n"
   | If (e, s1, s2) ->
       let if_str = "if " ^ string_of_expr e ^ ":\n" in
       let _  = curr_indent_level := !curr_indent_level + 1 in
@@ -142,7 +142,7 @@ let rec string_of_stmt s =
       let _  = curr_indent_level := !curr_indent_level - 1 in
       loop_str ^ loop_stmts
   | Return ex -> 
-      "return " ^ string_of_expr ex ^ ".\n"
+      "return " ^ string_of_expr ex ^ "\n"
   | Continue -> "continue\n"
   | Stop -> "stop\n" in
       String.concat "" (List.init (!curr_indent_level) (fun _ -> "  ")) ^ (string_of_stmt_raw s)
