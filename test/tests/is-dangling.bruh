@@ -1,0 +1,6 @@
+define mirror(number n -> number):
+  return n
+  say("test")
+
+say(mirror(37))
+  
