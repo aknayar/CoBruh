@@ -68,17 +68,22 @@ let check (binds, funcs, stmts): sprogram =
             | hd::tl -> if Hashtbl.mem hd id then (Hashtbl.find hd id, SId (id, ind)) else find_id (ind + 1) tl
           in find_id 0 !scopes
       | Binop (exp1, op, exp2) -> 
-          let sexpr1 = check_expr exp1 in let dtype1 = fst sexpr1 in
+          let sexpr1 = ref (check_expr exp1) in let dtype1 = fst !sexpr1 in
           let sexpr2 = check_expr exp2 in let dtype2 = fst sexpr2 in
+          let tmp_op = ref op in 
           if dtype1 != dtype2 then raise (Failure (mismatched_bop_args_err (string_of_bop op)))
           else let res_type = (
             match op with 
-                (Plus | Minus | Times | IntDiv | Div | Mod) when dtype1 = Number -> Number
+                (Plus | Minus | Times | Div | Mod) when dtype1 = Number -> Number
+              | IntDiv when dtype1 = Number -> 
+                  sexpr1 := (Number, SBinop (!sexpr1, Minus, (Number, SBinop(!sexpr1, Mod, sexpr2)))); 
+                  tmp_op := Div; 
+                  Number
               | (Eq | Neq | Less | Leq | Greater | Geq) when dtype1 = Number -> Bool
               | (And | Or) when dtype1 = Bool -> Bool
               | _ -> raise (Failure (invalid_bop_args_err (string_of_bop op)))
           ) in
-          (res_type, SBinop (sexpr1, op, sexpr2))
+          (res_type, SBinop (!sexpr1, !tmp_op, sexpr2))
       | Unop (op, exp) ->
           let sexpr' = check_expr exp in let dtype' = fst sexpr' in
           let res_type = (
