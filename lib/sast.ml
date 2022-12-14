@@ -7,17 +7,17 @@ and sx =
   | SCharLit of char
   | SStringLit of string
   | SArray of sexpr list
+  | SDefaultArray of dtype * sexpr
   | SId of string * int
   | SBinop of sexpr * bop * sexpr
   | SUnop of uop * sexpr
   | SCall of string * sexpr list
-  | SElem of string * sexpr
+  | SElem of string * int * sexpr
 
 type sstmt = 
     SExpr of sexpr
   | SInit of string * sexpr (* for initializing and assigning a variable *)
   | SReassign of string * int * sexpr (* for reassigning an existing variable *)
-  (* | SAlloc of dtype * string * sexpr *)
   | SIf of sexpr * sstmt list * sstmt list
   | SIterLoop of string * sexpr * sexpr * sexpr * sstmt list
   | SCondLoop of sexpr * sstmt list
