@@ -42,4 +42,4 @@ for file in os.listdir(directory):
       
         if not ans.strip() == result.strip():
             raise Exception(f"Incorrect output on test case: {file_loc}\nOutput: {result}Expected output: {ans}")
-print(f"\npassed {ctr}/{ctr} test cases")
+print(f"\nPassed {ctr}/{ctr} test cases")
