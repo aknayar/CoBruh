@@ -16,7 +16,6 @@ let mismatched_bop_args_err op = "mismatched arguments for binary operator " ^ o
 let mismatched_return_err name = "incorrect function return type for " ^ name
 let missing_func_err name = "function " ^ name ^ " does not exist"
 let missing_id_err name = "variable " ^ name ^ " does not exist"
-let missing_return_err name = "missing return statement for " ^ name
 let none_arg_err name = "function call to " ^ name ^ " gets passed a none"
 let none_assignment_err name = "cannot assign to none, but " ^ name ^ " tries to"
 let none_return_err name typ = "function " ^ name ^ " has " ^ typ ^ " return type but does not return"
