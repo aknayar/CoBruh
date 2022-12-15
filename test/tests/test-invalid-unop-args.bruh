@@ -1,0 +1,2 @@
+character a is 'a'
+say(-a)

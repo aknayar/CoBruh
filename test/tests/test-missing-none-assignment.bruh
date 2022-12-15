@@ -1,0 +1,4 @@
+define print_fancy(none -> none):
+  shout("stuff")
+
+x is print_fancy()

@@ -1,0 +1,9 @@
+define reverse(number n -> number):
+  if (n == 0):
+    return 0
+  number res is 0
+  loop n > 0:
+    res is res * 10 + n % 10
+    n is n // 10
+
+say(reverse(12))

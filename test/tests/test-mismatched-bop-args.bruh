@@ -1,0 +1,4 @@
+boolean a is true
+number b is 2
+
+say(a+b)

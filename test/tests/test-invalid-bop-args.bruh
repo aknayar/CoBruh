@@ -1,0 +1,3 @@
+boolean a is true
+boolean b is true
+shout(a + b)

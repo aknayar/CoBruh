@@ -1,0 +1,6 @@
+define foo(number x -> none):
+  y is x + 2
+  shout(y)
+  return y
+
+foo(5)

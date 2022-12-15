@@ -1,0 +1,4 @@
+define foo(number x -> number):
+  return x + 2
+
+say(foo(true))
