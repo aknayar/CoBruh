@@ -1,10 +1,12 @@
 import os
 import subprocess
 
+ctr = 0
 # all the test files are in /tests
 directory = os.fsencode("./tests")
     
 for file in os.listdir(directory):
+    ctr += 1
     # run the file
     # get the output
     # compare with corresponding .err or .out file
@@ -40,3 +42,4 @@ for file in os.listdir(directory):
       
         if not ans.strip() == result.strip():
             raise Exception(f"Incorrect output on test case: {file_loc}\nOutput: {result}Expected output: {ans}")
+print(f"\npassed {ctr}/{ctr} test cases")
