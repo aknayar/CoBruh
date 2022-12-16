@@ -170,7 +170,7 @@ let translate (binds, sfuncs): L.llmodule =
           ignore (L.build_store sexp' elem builder); builder
       | SIf (prd, if_block, else_block) ->
           let bool_val = build_expr builder prd in
-          let merge_bb = L.append_block context "merge" the_func in
+          let merge_bb = L.append_block context "merge_if" the_func in
           let build_br_merge = L.build_br merge_bb in (* partial function *)
 
           let then_bb = L.append_block context "then" the_func in
@@ -191,7 +191,7 @@ let translate (binds, sfuncs): L.llmodule =
           let pred_builder = L.builder_at_end context prd_bb in
           let bool_val = build_expr pred_builder prd in
       
-          let merge_bb = L.append_block context "merge" the_func in
+          let merge_bb = L.append_block context "merge_loop" the_func in
           ignore(L.build_cond_br bool_val block_bb merge_bb pred_builder);
           L.builder_at_end context merge_bb
       | SReturn sexp -> 
@@ -213,7 +213,7 @@ let translate (binds, sfuncs): L.llmodule =
     if fn.srtype = None then 
       let _ = List.iter (fun arr -> ignore (L.build_free arr builder)) !malloced in
       add_terminal builder (L.build_ret_void);
-    else ();
+    else add_terminal builder (L.build_unreachable);
 
   in List.iter build_func_body sfuncs;
   mdl
