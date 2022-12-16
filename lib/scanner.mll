@@ -83,9 +83,6 @@ rule token = parse
 | "if"       { push IF }
 | "else"     { push ELSE }
 | "loop"     { push LOOP }
-| "in"       { push IN }
-| "to"       { push TO }
-| "by"       { push BY }
 | "continue" { push CONTINUE }
 | "stop"     { push STOP }
 

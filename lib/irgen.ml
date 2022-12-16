@@ -10,27 +10,26 @@ let translate (binds, sfuncs): L.llmodule =
   let f_t = L.double_type context 
   and i1_t = L.i1_type context 
   and i8_t = L.i8_type context 
+  and i32_t = L.i32_type context
   and void_t = L.void_type context in
 
-  let lltype_of_dtype = function
+  let rec lltype_of_dtype = function
       Number -> f_t
     | Bool -> i1_t
     | Char -> i8_t
     | String -> L.pointer_type i8_t
+    | Array typ -> L.pointer_type (lltype_of_dtype typ)
     | None -> void_t
+    | _ -> raise (Failure "unimplemented") 
+  in
+  let default_value = function
+      Number -> L.const_float (lltype_of_dtype Number) 0.0
+    | (Bool | Char) as typ -> L.const_int (lltype_of_dtype typ) 0
     | _ -> raise (Failure "unimplemented") 
   in
 
   let globals = Hashtbl.create (List.length binds) in
-  let add_global (typ, name) = 
-    let init = 
-      match typ with
-          Number -> L.const_float (lltype_of_dtype typ) 0.0
-        | (Bool | Char) -> L.const_int (lltype_of_dtype typ) 0
-        | String -> L.const_stringz context ""
-        | _ -> raise (Failure "unimplemented")
-    in Hashtbl.add globals name (L.define_global name init mdl)
-  in List.iter add_global binds;
+  List.iter (fun (typ, name) -> Hashtbl.add globals name (L.define_global name (default_value typ) mdl)) binds;
 
   let printf_t : L.lltype = L.var_arg_function_type void_t [| L.pointer_type i8_t |] in
   let printf_func : L.llvalue = L.declare_function "printf" printf_t mdl in
@@ -83,7 +82,19 @@ let translate (binds, sfuncs): L.llmodule =
         SNumberLit n -> L.const_float (lltype_of_dtype Number) n
       | SBoolLit b -> L.const_int (lltype_of_dtype Bool) (if b then 1 else 0)
       | SCharLit c -> L.const_int (lltype_of_dtype Char) (Char.code c)
-      | SStringLit s -> L.build_global_stringptr s "tmp" builder
+      | SStringLit s -> L.build_global_stringptr s "str" builder
+      | SArray arr -> 
+          let arr' = L.build_array_malloc (lltype_of_dtype (fst (List.hd arr))) (L.const_int i32_t (List.length arr)) "arr" builder in
+          List.iteri (
+            fun ind item -> 
+              let item' = build_expr builder item in
+              let ind' = L.build_in_bounds_gep arr' [| L.const_int i32_t ind |] "ind" builder in
+              ignore (L.build_store item' ind' builder)
+          ) arr; arr'
+      | SDefaultArray (typ, n) -> 
+          let size = build_expr builder n in
+          let size' = L.build_fptosi size i32_t "default_arr" builder in
+          L.build_array_malloc (lltype_of_dtype typ) size' "arr" builder 
       | SId (id, sc) -> L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder
       | SBinop (e1, op, e2) ->
           let e1' = build_expr builder e1
@@ -103,8 +114,8 @@ let translate (binds, sfuncs): L.llmodule =
               | Leq     -> L.build_fcmp L.Fcmp.Ole
               | Greater -> L.build_fcmp L.Fcmp.Ogt
               | Geq     -> L.build_fcmp L.Fcmp.Oge
-              | _       -> raise (Failure "unimplemented")
-          ) e1' e2' "tmp" builder
+              | IntDiv  -> raise (Failure "internal error")
+          ) e1' e2' "bop" builder
       | SUnop (op, e) ->
           let e' = build_expr builder e in
           (
@@ -122,7 +133,12 @@ let translate (binds, sfuncs): L.llmodule =
           let llargs = List.rev (List.map (build_expr builder) (List.rev params)) in
           let res = if fn'.srtype = None then "" else id ^ "_result" in
           L.build_call fdef (Array.of_list llargs) res builder
-      | _ -> raise (Failure "unimplemented")
+      | SElem (id, sc, ind) -> 
+          let arr = L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder in
+          let loc = build_expr builder ind in
+          let ind' = L.build_fptosi loc i32_t (id ^ "_ind") builder in
+          let elem = L.build_in_bounds_gep arr [| ind' |] (id ^ "_elem") builder in
+          L.build_load elem (id ^ "_res") builder
     in
 
     let add_terminal builder instr = 
@@ -134,16 +150,24 @@ let translate (binds, sfuncs): L.llmodule =
     let rec build_stmt builder = function
         SExpr sexp -> ignore (build_expr builder sexp); builder
       | SInit (id, sexp) -> 
-          let local = L.build_alloca (lltype_of_dtype (fst sexp)) id builder
+          let typ = fst sexp in
+          let local = L.build_alloca (lltype_of_dtype typ) id builder
           in Hashtbl.add (List.hd !scopes) id local;
           let sexp' = build_expr builder sexp in
           ignore (L.build_store sexp' local builder); builder
       | SReassign (id, sc, sexp) -> 
           let sexp' = build_expr builder sexp in
           ignore (L.build_store sexp' (Hashtbl.find (List.nth !scopes sc) id) builder); builder
+      | SArrayIndex (id, sc, ind, sexp) ->
+          let arr = L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder in
+          let loc = build_expr builder ind 
+          and sexp' = build_expr builder sexp in
+          let ind' = L.build_fptosi loc i32_t (id ^ "_ind") builder in
+          let elem = L.build_in_bounds_gep arr [| ind' |] (id ^ "_ind") builder in
+          ignore (L.build_store sexp' elem builder); builder
       | SIf (prd, if_block, else_block) ->
           let bool_val = build_expr builder prd in
-          let merge_bb = L.append_block context "merge" the_func in
+          let merge_bb = L.append_block context "merge_if" the_func in
           let build_br_merge = L.build_br merge_bb in (* partial function *)
 
           let then_bb = L.append_block context "then" the_func in
@@ -164,7 +188,7 @@ let translate (binds, sfuncs): L.llmodule =
           let pred_builder = L.builder_at_end context prd_bb in
           let bool_val = build_expr pred_builder prd in
       
-          let merge_bb = L.append_block context "merge" the_func in
+          let merge_bb = L.append_block context "merge_loop" the_func in
           ignore(L.build_cond_br bool_val block_bb merge_bb pred_builder);
           L.builder_at_end context merge_bb
       | SReturn sexp -> 
@@ -183,7 +207,7 @@ let translate (binds, sfuncs): L.llmodule =
     let builder = List.fold_left build_stmt builder fn.sbody in
 
     if fn.srtype = None then add_terminal builder (L.build_ret_void)
-    else ()
+    else add_terminal builder (L.build_unreachable)
 
   in List.iter build_func_body sfuncs;
   mdl
