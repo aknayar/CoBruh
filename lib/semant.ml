@@ -33,7 +33,7 @@ let internal_err = "internal error"
 let unimplemented_err = "unimplemented"
   
 let reserved_funcs = [("main", ([], None)); ("say", ([(Any, "arg")], None)); ("shout", ([(Any, "arg")], None));
-                      ("inputc", ([], Char)); ("inputn", ([], Number))]
+                      ("inputc", ([], Char)); ("inputn", ([], Number)); ("inputs", ([], String))]
 
 let check (binds, funcs, stmts): sprogram =
 

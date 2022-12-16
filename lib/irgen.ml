@@ -72,7 +72,9 @@ let translate (binds, sfuncs): L.llmodule =
     in List.iter2 add_param fn.sparams (Array.to_list (L.params the_func));
 
     let read_typ typ = 
-      let scanin = L.build_alloca (lltype_of_dtype typ) "scanin" builder in
+      let scanin = match typ with 
+          String -> L.build_array_alloca (lltype_of_dtype String) (L.const_int i32_t 100) "scanin" builder
+        | _ -> L.build_alloca (lltype_of_dtype typ) "scanin" builder in
       ignore (L.build_call scanf_func [| format_string_of_dtype typ true false; scanin |] "" builder);
       L.build_load scanin "scanin" builder
     
@@ -129,6 +131,7 @@ let translate (binds, sfuncs): L.llmodule =
       | SCall ("shout", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false true ; (build_expr builder e) |] "" builder
       | SCall ("inputc", []) -> read_typ Char
       | SCall ("inputn", []) -> read_typ Number
+      | SCall ("inputs", []) -> read_typ String
       | SCall (id, params) -> 
           let (fdef, fn') = Hashtbl.find all_funcs id in
           let llargs = List.rev (List.map (build_expr builder) (List.rev params)) in
