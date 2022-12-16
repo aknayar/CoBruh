@@ -45,6 +45,7 @@ let translate (binds, sfuncs): L.llmodule =
 
   let build_func_body fn = 
     let scopes = ref [globals] in
+    let malloced = ref [] in
 
     let (the_func, _) = Hashtbl.find all_funcs fn.sfname in
     let builder = L.builder_at_end context (L.entry_block the_func) in
@@ -85,6 +86,7 @@ let translate (binds, sfuncs): L.llmodule =
       | SStringLit s -> L.build_global_stringptr s "str" builder
       | SArray arr -> 
           let arr' = L.build_array_malloc (lltype_of_dtype (fst (List.hd arr))) (L.const_int i32_t (List.length arr)) "arr" builder in
+          malloced := arr'::!malloced;
           List.iteri (
             fun ind item -> 
               let item' = build_expr builder item in
@@ -99,6 +101,7 @@ let translate (binds, sfuncs): L.llmodule =
             | None -> raise (Failure "invalid array size")
           ) in
           let arr = L.build_array_malloc (lltype_of_dtype typ) (L.const_int i32_t size') "arr" builder in
+          malloced := arr::!malloced;
           let elem = default_value typ in
           let rec fill_array ind = 
             if ind = size' then ()
@@ -214,6 +217,7 @@ let translate (binds, sfuncs): L.llmodule =
           ignore(L.build_cond_br bool_val block_bb merge_bb pred_builder);
           L.builder_at_end context merge_bb
       | SReturn sexp -> 
+          List.iter (fun arr -> ignore (L.build_free arr builder)) !malloced;
           ignore (
             if fn.srtype = None then L.build_ret_void builder
             else L.build_ret (build_expr builder sexp) builder
@@ -228,8 +232,10 @@ let translate (binds, sfuncs): L.llmodule =
     
     let builder = List.fold_left build_stmt builder fn.sbody in
 
-    if fn.srtype = None then add_terminal builder (L.build_ret_void)
-    else ()
+    if fn.srtype = None then 
+      let _ = List.iter (fun arr -> ignore (L.build_free arr builder)) !malloced in
+      add_terminal builder (L.build_ret_void);
+    else ();
 
   in List.iter build_func_body sfuncs;
   mdl
