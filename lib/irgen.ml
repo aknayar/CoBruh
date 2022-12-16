@@ -25,6 +25,7 @@ let translate (binds, sfuncs): L.llmodule =
   let default_value = function
       Number -> L.const_float (lltype_of_dtype Number) 0.0
     | (Bool | Char) as typ -> L.const_int (lltype_of_dtype typ) 0
+    | String -> L.const_pointer_null (lltype_of_dtype String)
     | _ -> raise (Failure "unimplemented") 
   in
 
