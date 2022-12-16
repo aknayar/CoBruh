@@ -20,13 +20,13 @@ let translate (binds, sfuncs): L.llmodule =
     | String -> L.pointer_type i8_t
     | Array typ -> L.pointer_type (lltype_of_dtype typ)
     | None -> void_t
-    | _ -> raise (Failure "unimplemented") 
+    | _ -> raise (Failure "internal error") 
   in
   let default_value = function
       Number -> L.const_float (lltype_of_dtype Number) 0.0
     | (Bool | Char) as typ -> L.const_int (lltype_of_dtype typ) 0
     | String -> L.const_pointer_null (lltype_of_dtype String)
-    | _ -> raise (Failure "unimplemented") 
+    | _ -> raise (Failure "internal error") 
   in
 
   let globals = Hashtbl.create (List.length binds) in
@@ -60,7 +60,7 @@ let translate (binds, sfuncs): L.llmodule =
         | Bool -> bool_format nl
         | Char -> char_format scan nl
         | String -> string_format nl
-        | _ -> raise (Failure "unimplemented")
+        | _ -> raise (Failure "internal error")
     ) in
 
     let body_scope = Hashtbl.create (List.length fn.sparams + List.length fn.sbody) in
