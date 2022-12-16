@@ -95,22 +95,9 @@ let translate (binds, sfuncs): L.llmodule =
           ) arr; arr'
       | SDefaultArray (typ, n) -> 
           let size = build_expr builder n in
-          let size_op = L.int64_of_const (L.const_fptosi size i32_t) in
-          let size' = (match size_op with 
-              Some act -> let act' = Int64.to_int act in if act' < 1 then raise (Failure "invalid array size") else act'
-            | None -> raise (Failure "invalid array size")
-          ) in
-          let arr = L.build_array_malloc (lltype_of_dtype typ) (L.const_int i32_t size') "arr" builder in
-          malloced := arr::!malloced;
-          let elem = default_value typ in
-          let rec fill_array ind = 
-            if ind = size' then ()
-            else
-              let ind' = L.build_in_bounds_gep arr [| L.const_int i32_t ind |] "ind" builder in
-              ignore (L.build_store elem ind' builder); 
-              fill_array (ind + 1) 
-          in
-          fill_array 0; arr
+          let size' = L.build_fptosi size i32_t "default_arr" builder in
+          let arr = L.build_array_malloc (lltype_of_dtype typ) size' "arr" builder in
+          malloced := arr::!malloced; arr
       | SId (id, sc) -> L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder
       | SBinop (e1, op, e2) ->
           let e1' = build_expr builder e1
@@ -130,7 +117,7 @@ let translate (binds, sfuncs): L.llmodule =
               | Leq     -> L.build_fcmp L.Fcmp.Ole
               | Greater -> L.build_fcmp L.Fcmp.Ogt
               | Geq     -> L.build_fcmp L.Fcmp.Oge
-              | _       -> raise (Failure "unimplemented")
+              | IntDiv  -> raise (Failure "internal error")
           ) e1' e2' "bop" builder
       | SUnop (op, e) ->
           let e' = build_expr builder e in
@@ -152,13 +139,9 @@ let translate (binds, sfuncs): L.llmodule =
       | SElem (id, sc, ind) -> 
           let arr = L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder in
           let loc = build_expr builder ind in
-          let ind_op = L.int64_of_const (L.const_fptosi loc i32_t) in
-          let ind' = (match ind_op with 
-              Some act -> let act' = Int64.to_int act in if act' < 0  then raise (Failure "invalid array index") else act'
-            | None -> raise (Failure "internal error")
-          ) in
-          let elem = L.build_in_bounds_gep arr [| L.const_int i32_t ind' |] (id ^ "_ind") builder in
-          L.build_load elem (id ^ "_elem") builder
+          let ind' = L.build_fptosi loc i32_t (id ^ "_ind") builder in
+          let elem = L.build_in_bounds_gep arr [| ind' |] (id ^ "_elem") builder in
+          L.build_load elem (id ^ "_res") builder
     in
 
     let add_terminal builder instr = 
@@ -182,13 +165,8 @@ let translate (binds, sfuncs): L.llmodule =
           let arr = L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder in
           let loc = build_expr builder ind 
           and sexp' = build_expr builder sexp in
-          let ind_op = L.int64_of_const (L.const_fptosi loc i32_t) in
-          let ind' = (
-            match ind_op with
-                Some act -> let act' = Int64.to_int act in if act' < 0  then raise (Failure "invalid array index") else act'
-              | None -> raise (Failure "internal error")
-          ) in
-          let elem = L.build_in_bounds_gep arr [| L.const_int i32_t ind' |] (id ^ "_ind") builder in
+          let ind' = L.build_fptosi loc i32_t (id ^ "_ind") builder in
+          let elem = L.build_in_bounds_gep arr [| ind' |] (id ^ "_ind") builder in
           ignore (L.build_store sexp' elem builder); builder
       | SIf (prd, if_block, else_block) ->
           let bool_val = build_expr builder prd in
