@@ -15,7 +15,7 @@ for i, file in enumerate(os.listdir(directory)):
         try:
             result = subprocess.run(f"{COMPILER_DIR} -c {file_loc}".split(), stdout=subprocess.PIPE)
         except FileNotFoundError:
-            raise Exception("Compiler not found. Try running "dune build" from the CoBruh directory")
+            raise Exception('Compiler not found. Try running "dune build" from the CoBruh directory')
         if filename.endswith(".out"):
             with open("main.ll", 'w') as writer:
                 writer.write(result.stdout.decode("utf-8"))
