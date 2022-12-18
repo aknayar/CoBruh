@@ -1,4 +1,8 @@
 (rule
  (alias runtest)
- (deps ../bin/main.exe ./input.bruh)
- (action (run ./runtest.sh)))
+ (deps 
+   testall.py
+   (alias ../all)
+   (source_tree tests)
+ )
+ (action (run python3 testall.py)))
