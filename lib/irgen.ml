@@ -50,6 +50,8 @@ let translate (binds, sfuncs): L.llmodule =
     let (the_func, _) = Hashtbl.find all_funcs fn.sfname in
     let builder = L.builder_at_end context (L.entry_block the_func) in
 
+    let prd_bbs = ref [] in
+
     let number_format scan nl = L.build_global_stringptr (if scan then "%lf" else "%g" ^ (if nl then "\n" else "")) "fmt" builder 
     and bool_format nl = L.build_global_stringptr ("%d" ^ (if nl then "\n" else "")) "fmt" builder
     and char_format scan nl = L.build_global_stringptr (if scan then " %c" else "%c" ^ (if nl then "\n" else "")) "fmt" builder
@@ -182,16 +184,24 @@ let translate (binds, sfuncs): L.llmodule =
       | SCondLoop (prd, block) ->
           let prd_bb = L.append_block context "loop" the_func in
           ignore(L.build_br prd_bb builder);
+          
+          ignore(prd_bbs := prd_bb::!prd_bbs);
       
           let block_bb = L.append_block context "loop_block" the_func in
           add_terminal (do_block (Hashtbl.create (List.length block)) block_bb block) (L.build_br prd_bb);
       
           let pred_builder = L.builder_at_end context prd_bb in
           let bool_val = build_expr pred_builder prd in
+
+          ignore(prd_bbs := match !prd_bbs with
+              _::tl -> tl
+            | _ -> raise (Failure "error")
+          );
       
           let merge_bb = L.append_block context "merge_loop" the_func in
           ignore(L.build_cond_br bool_val block_bb merge_bb pred_builder);
           L.builder_at_end context merge_bb
+      | SContinue -> ignore(L.build_br (List.hd !prd_bbs) builder); builder
       | SReturn sexp -> 
           ignore (
             if fn.srtype = None then L.build_ret_void builder
