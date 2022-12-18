@@ -145,4 +145,4 @@ dtype:
 
 global_dtype:
     atomic_dtype                           { $1 }
-  | atomic_dtype LSQUARE NUMBERLIT RSQUARE { FixedArray ($1, int_of_float $3) }
+  | atomic_dtype LSQUARE NUMBERLIT RSQUARE { FixedArray ($1, $3) }

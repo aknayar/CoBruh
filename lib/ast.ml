@@ -4,7 +4,7 @@ type dtype =
   | Char 
   | String 
   | Array of dtype
-  | FixedArray of dtype * int
+  | FixedArray of dtype * float
   | None
   | Any
 
@@ -80,7 +80,7 @@ let rec string_of_dtype = function
   | Char -> "character"
   | String -> "string"
   | Array typ -> string_of_dtype typ ^ "[]"
-  | FixedArray (typ, n) -> string_of_dtype typ ^ "[" ^ string_of_int n ^ "]"
+  | FixedArray (typ, n) -> string_of_dtype typ ^ "[" ^ string_of_float n ^ "]"
   | None -> "none"
   | Any -> "any"
 
