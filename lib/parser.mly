@@ -42,7 +42,7 @@ decls:
  | decls fdecl { (fst $1, ($2 :: snd $1)) }
 
 vdecl:
-  dtype ID EOL { ($1, $2) }
+  ID ASSIGN global_dtype EOL { ($3, $1) }
 
 bind:
   dtype ID { ($1, $2) }
@@ -142,3 +142,7 @@ atomic_dtype:
 dtype:
     atomic_dtype                 { $1 }
   | atomic_dtype LSQUARE RSQUARE { Array $1 }
+
+global_dtype:
+    atomic_dtype                           { $1 }
+  | atomic_dtype LSQUARE NUMBERLIT RSQUARE { FixedArray ($1, $3) }

@@ -28,11 +28,22 @@ let translate (binds, sfuncs): L.llmodule =
       Number -> L.const_float (lltype_of_dtype Number) 0.0
     | (Bool | Char) as typ -> L.const_int (lltype_of_dtype typ) 0
     | String -> L.const_pointer_null (lltype_of_dtype String)
+    | FixedArray (typ, _) -> L.const_pointer_null (L.pointer_type (lltype_of_dtype typ))
     | _ -> raise (Failure internal_err) 
   in
 
   let globals = Hashtbl.create (List.length binds) in
-  List.iter (fun (typ, name) -> Hashtbl.add globals name (L.define_global name (default_value typ) mdl)) binds;
+  let to_be_malloced = ref [] in
+  List.iter (
+    fun (typ, name) -> 
+      let glob = L.define_global name (default_value typ) mdl in
+      (
+        match typ with
+            (String | FixedArray _) -> to_be_malloced := (glob, typ)::!to_be_malloced
+          | _ -> ()
+      );
+      Hashtbl.add globals name glob
+  ) binds;
 
   let printf_t : L.lltype = L.var_arg_function_type void_t [| L.pointer_type i8_t |] in
   let printf_func : L.llvalue = L.declare_function "printf" printf_t mdl in
@@ -222,7 +233,20 @@ let translate (binds, sfuncs): L.llmodule =
       scopes := List.tl (!scopes);
       res
     in
-    
+
+    (* malloc globals in main *)
+    let builder = (
+      if fn.sfname = "main" then (
+        List.iter (
+          fun (glob, typ) ->
+            match typ with
+                String -> ignore (L.build_store (build_expr builder (SStringLit "")) glob builder)
+              | FixedArray (typ', n) -> ignore (L.build_store (build_expr builder (SArrayLit (typ', Some (SNumberLit n), None))) glob builder)
+              | _ -> raise (Failure internal_err)
+        ) !to_be_malloced; builder
+      )
+      else builder
+    ) in
     let builder = List.fold_left build_stmt builder fn.sbody in
 
     if fn.srtype = None then add_terminal builder (L.build_ret_void)

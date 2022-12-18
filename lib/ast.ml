@@ -4,6 +4,7 @@ type dtype =
   | Char 
   | String 
   | Array of dtype
+  | FixedArray of dtype * float
   | None
   | Any
 
@@ -79,6 +80,7 @@ let rec string_of_dtype = function
   | Char -> "character"
   | String -> "string"
   | Array typ -> string_of_dtype typ ^ "[]"
+  | FixedArray (typ, n) -> string_of_dtype typ ^ "[" ^ string_of_float n ^ "]"
   | None -> "none"
   | Any -> "any"
 
@@ -141,7 +143,7 @@ let rec string_of_stmt s =
   | SCall (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")" in
       String.concat "" (List.init (!curr_indent_level) (fun _ -> "  ")) ^ (string_of_stmt_raw s)
 
-let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id
+let string_of_bind (b: bind) = let (t, id) = b in id ^ " is " ^ string_of_dtype t
 
 let string_of_func_params (binds: bind list) = 
   match binds with
