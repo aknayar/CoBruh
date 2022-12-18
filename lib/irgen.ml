@@ -193,10 +193,7 @@ let translate (binds, sfuncs): L.llmodule =
           let pred_builder = L.builder_at_end context prd_bb in
           let bool_val = build_expr pred_builder prd in
 
-          ignore(prd_bbs := match !prd_bbs with
-              _::tl -> tl
-            | _ -> raise (Failure "error")
-          );
+          prd_bbs := List.tl !prd_bbs;
       
           let merge_bb = L.append_block context "merge_loop" the_func in
           ignore(L.build_cond_br bool_val block_bb merge_bb pred_builder);
