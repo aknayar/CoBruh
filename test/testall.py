@@ -3,6 +3,7 @@ import subprocess
 
 TEST_DIR = "./tests/"
 COMPILER_DIR = "../bin/main.exe"
+LLVM_OUT = "test_tmp.ll"
 num_passed, num_total = 0, 0
 directory = os.fsencode(TEST_DIR)
     
@@ -17,9 +18,9 @@ for i, file in enumerate(os.listdir(directory)):
         except FileNotFoundError:
             raise Exception('Compiler not found. Try running "dune build" from the CoBruh directory')
         if filename.endswith(".out"):
-            with open("main.ll", 'w') as writer:
+            with open(LLVM_OUT, 'w') as writer:
                 writer.write(result.stdout.decode("utf-8"))
-            result = subprocess.run("lli main.ll".split(), stdout=subprocess.PIPE)
+            result = subprocess.run(f"lli {LLVM_OUT}".split(), stdout=subprocess.PIPE)
         result = result.stdout.decode("utf-8") 
         print(f"Running test case {(i + 1) // 2} ({filename}):", end=" ")
         num_total += 1
@@ -30,4 +31,5 @@ for i, file in enumerate(os.listdir(directory)):
             else:
                 num_passed += 1
                 print("passed")
+os.remove(LLVM_OUT)
 print(f"\nPassed {num_passed}/{num_total} test cases")
