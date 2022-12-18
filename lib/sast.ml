@@ -18,17 +18,11 @@ type sstmt =
   | SReassign of sx * sx
   | SIf of sx * sstmt list * sstmt list
   | SCondLoop of sx * sstmt list
+  | SFuncDecl of string * bind list * dtype * sstmt list
   | SReturn of sexpr
   | SContinue
   | SStop
   | SSCall of sx
 
-type sfunc = {
-  sfname: string;
-  sparams: bind list;
-  srtype: dtype;
-  sbody: sstmt list;
-}
-
-type sprogram = bind list * sfunc list
+type sprogram = sstmt
 

@@ -34,15 +34,7 @@
 %%
 
 program:
-  decls stmt_list EOF { (List.rev (fst $1), List.rev (snd $1), $2) }
-
-decls:
-   /* nothing */ { ([], [])               }
- | decls vdecl { (($2 :: fst $1), snd $1) }
- | decls fdecl { (fst $1, ($2 :: snd $1)) }
-
-vdecl:
-  dtype ID EOL { ($1, $2) }
+  stmt_list EOF { $1 }
 
 bind:
   dtype ID { ($1, $2) }
@@ -60,15 +52,7 @@ func_rtype:
   | NONE  { None }
 
 fdecl:
-  DEFINE ID LPAREN opt_params_list GIVES func_rtype RPAREN COLON EOL INDENT stmt_list DEDENT
-  {
-    {
-      fname=$2;
-      params=$4;
-      rtype=$6;
-      body=$11
-    }
-  }
+  DEFINE ID LPAREN opt_params_list GIVES func_rtype RPAREN COLON EOL INDENT stmt_list DEDENT { FuncDecl ($2, $4, $6, $11) }
 
 fcall:
   ID LPAREN expr_list_opt RPAREN { ($1, $3) }
@@ -132,6 +116,7 @@ stmt:
   | CONTINUE EOL                                                                     { Continue }
   | STOP EOL                                                                         { Stop }
   | fcall EOL                                                                        { SCall (fst $1, snd $1) }
+  | fdecl                                                                            { $1 }
 
 atomic_dtype:
     NUMBER { Number }
