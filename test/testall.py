@@ -10,6 +10,7 @@ for file in os.listdir(directory):
     filename = os.fsdecode(file)
     file_ans_loc = os.path.join(TEST_DIR, filename)
     file_loc = os.path.join(TEST_DIR, '.'.join(filename.split('.')[:-1] + ["bruh"]))
+    
     if filename.endswith(".err") or filename.endswith(".out"):
         result = subprocess.run(f"dune exec -- CoBruh -c {file_loc}".split(), stdout=subprocess.PIPE)
         if filename.endswith(".out"):
