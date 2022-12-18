@@ -1,1 +1,1 @@
-Error in semantics: conditional loop must take in boolean, but number is passed
+Error in semantics: conditional loop expects boolean but got number
