@@ -7,13 +7,13 @@ let duplicate_func_err name = "function name " ^ name ^ " already exists"
 let duplicate_param_name_err name = "function parameters must have unique names, but " ^ name ^ " appears multiple times"
 let inconsistent_array_err exp act = string_of_dtype exp ^ " array got type " ^ string_of_dtype act
 let invalid_array_alloc_err name typ = "array allocation for " ^ name ^ " expects number but got " ^ string_of_dtype typ 
-let invalid_array_index_err name typ = "array index expects number, but " ^ name ^ " got " ^ string_of_dtype typ
+let invalid_array_index_err typ = "array index expects number but got " ^ string_of_dtype typ
 let invalid_array_indexing_err name typ = "indexing is for arrays, but " ^ name ^ " is " ^ string_of_dtype typ
 let invalid_assignment_err name exp act = "variables can be assigned to only one type, but " ^ name ^ " is assigned to both " ^ string_of_dtype exp ^ " and " ^ string_of_dtype act
 let invalid_bop_args_err op = "invalid arguments for binary operator " ^ op
 let invalid_cond_loop_err typ = "conditional loop expects boolean but got " ^ typ
 let invalid_if_err typ = "if expects boolean but got " ^ typ
-let invalid_indexing_err id typ = "only arrays can be indexed, but " ^ id ^ " is " ^ string_of_dtype typ
+let invalid_indexing_err typ = "only arrays can be indexed, but " ^ string_of_dtype typ ^ " is indexed"
 let invalid_iter_loop_err typs = "iterative loop expects (number, number, number) but got (" ^ String.concat ", " typs ^ ")"
 let invalid_unop_args_err op = "invalid argument for unary operator " ^ op
 let mismatched_func_args_err name exp act = "function call to " ^ name ^ " expected " ^ exp ^ " but got " ^ act
@@ -78,22 +78,15 @@ let check (binds, funcs, stmts): sprogram =
                 [] -> raise (Failure (missing_id_err id))
               | hd::tl -> if Hashtbl.mem hd id then (Hashtbl.find hd id, SId (id, ind)) else find_id (ind + 1) tl
           in find_id 0 !scopes
-      | Elem (id, ind) -> 
-          let (ind_typ, ind_sx) = check_expr ind in 
-          if ind_typ <> Number then raise (Failure (invalid_array_index_err id ind_typ))
-          else 
-            let rec find_id sc_ind sc = 
-              match sc with
-                  [] -> raise (Failure (missing_id_err id))
-                | hd::tl -> 
-                    if Hashtbl.mem hd id then 
-                    (
-                      match Hashtbl.find hd id with
-                          Array typ -> (typ, SElem (id, sc_ind, ind_sx))
-                        | _ as typ -> raise (Failure (invalid_indexing_err id typ))
-                    )
-                    else find_id (sc_ind + 1) tl
-            in find_id 0 !scopes 
+      | Elem (exp, ind) -> 
+          let (exp_typ, exp_sx) = check_expr exp
+          and (ind_typ, ind_sx) = check_expr ind in 
+          if ind_typ <> Number then raise (Failure (invalid_array_index_err ind_typ))
+          else (
+            match exp_typ with 
+                Array typ -> (typ, SElem (exp_sx, ind_sx))
+              | _ as typ -> raise (Failure (invalid_indexing_err typ))
+          ) 
       | Binop (exp1, op, exp2) -> 
           let sexpr1 = check_expr exp1 and (exp2_typ, exp2_sx) = check_expr exp2 in
           let exp1_typ = fst sexpr1 and exp1_sx = ref (snd sexpr1) in
@@ -176,18 +169,23 @@ let check (binds, funcs, stmts): sprogram =
                         )
                       | None -> let _ = Hashtbl.add (List.hd !scopes) id exp_typ in SInit (exp_typ, id, exp_sx)
                   )
-              | Elem (id, _) ->
-                  if exp_typ = None then raise (Failure (none_assignment_err id)) 
-                  else (
-                    match item' with
-                        Some (typ', selem) -> (
-                          match selem with
-                              SElem _ -> 
-                                if typ' <> exp_typ then raise (Failure (invalid_assignment_err id typ' exp_typ))
-                                else SReassign (selem, exp_sx)
-                            | _ -> raise (Failure internal_err)
+              | Elem (ele, _) ->
+                  (
+                    match ele with
+                      Id id -> 
+                        if exp_typ = None then raise (Failure (none_assignment_err id))
+                        else (
+                          match item' with
+                            Some (typ', selem) -> (
+                              match selem with
+                                  SElem _ -> 
+                                    if typ' <> exp_typ then raise (Failure (invalid_assignment_err id typ' exp_typ))
+                                    else SReassign (selem, exp_sx)
+                                | _ -> raise (Failure internal_err)
+                            )
+                          | None -> raise (Failure (missing_id_err id))
                         )
-                      | None -> raise (Failure (missing_id_err id))
+                    | _ -> raise (Failure internal_err)
                   )
               | _ -> raise (Failure internal_err)
           )

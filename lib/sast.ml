@@ -8,7 +8,7 @@ and sx =
   | SStringLit of string
   | SArrayLit of dtype * sx option * sx list option
   | SId of string * int
-  | SElem of string * int * sx
+  | SElem of sx * sx
   | SBinop of sx * bop * sx
   | SUnop of uop * sx
   | SCall of string * sexpr list

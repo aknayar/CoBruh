@@ -106,6 +106,12 @@ let translate (binds, sfuncs): L.llmodule =
                 ) contents'; arr
         )
       | SId (id, sc) -> L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder
+      | SElem (container, ind) -> 
+          let container' = build_expr builder container in
+          let loc = build_expr builder ind in
+          let ind' = L.build_fptosi loc i32_t "ind" builder in
+          let elem = L.build_in_bounds_gep container' [| ind' |] "elem" builder in
+          L.build_load elem "res" builder
       | SBinop (e1, op, e2) ->
           let e1' = build_expr builder e1
           and e2' = build_expr builder e2 in
@@ -143,12 +149,6 @@ let translate (binds, sfuncs): L.llmodule =
           let llargs = List.rev (List.map (fun item -> build_expr builder (snd item)) (List.rev params)) in
           let res = if fn'.srtype = None then "" else id ^ "_result" in
           L.build_call fdef (Array.of_list llargs) res builder
-      | SElem (id, sc, ind) -> 
-          let arr = L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder in
-          let loc = build_expr builder ind in
-          let ind' = L.build_fptosi loc i32_t (id ^ "_ind") builder in
-          let elem = L.build_in_bounds_gep arr [| ind' |] (id ^ "_elem") builder in
-          L.build_load elem (id ^ "_res") builder
     in
 
     let add_terminal builder instr = 
@@ -169,11 +169,11 @@ let translate (binds, sfuncs): L.llmodule =
           (
             match lhs with
                 SId (id, sc) -> ignore (L.build_store sexp' (Hashtbl.find (List.nth !scopes sc) id) builder)
-              | SElem (id, sc, ind) -> 
-                  let arr = L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder in
+              | SElem (container, ind) -> 
+                  let container' = build_expr builder container in
                   let loc = build_expr builder ind in
-                  let ind' = L.build_fptosi loc i32_t (id ^ "_ind") builder in
-                  let elem = L.build_in_bounds_gep arr [| ind' |] (id ^ "_ind") builder in
+                  let ind' = L.build_fptosi loc i32_t "ind" builder in
+                  let elem = L.build_in_bounds_gep container' [| ind' |] "elem" builder in
                   ignore (L.build_store sexp' elem builder)
               | _ -> raise (Failure internal_err)
           ); builder

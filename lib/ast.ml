@@ -35,7 +35,7 @@ type expr =
   | StringLit of string 
   | ArrayLit of expr list
   | Id of string 
-  | Elem of string * expr
+  | Elem of expr * expr
   | Binop of expr * bop * expr
   | Unop of uop * expr
   | Call of string * expr list
@@ -111,12 +111,12 @@ let rec string_of_expr = function
     | Neg -> "-" ^ string_of_expr e
     | Abs -> "|" ^ string_of_expr e ^ "|")
   | Call (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
-  | Elem (l, e) -> l ^ "[" ^ string_of_expr e ^ "]"
+  | Elem (l, e) -> string_of_expr l ^ "[" ^ string_of_expr e ^ "]"
 
 let rec string_of_stmt s = 
   let string_of_stmt_raw = function
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ "\n"
-  | InferAssign (id, e) -> (match id with Id id -> id | Elem (id, ind) -> id ^ "[" ^ string_of_expr ind ^ "]" | _ -> raise (Failure "internal error")) ^ " is " ^ string_of_expr e ^ "\n"
+  | InferAssign (id, e) -> (match id with Id id -> id | Elem (id, ind) -> string_of_expr id ^ "[" ^ string_of_expr ind ^ "]" | _ -> raise (Failure "internal error")) ^ " is " ^ string_of_expr e ^ "\n"
   | Alloc (t, n, id) -> string_of_dtype t ^ "[" ^ string_of_expr n ^ "] " ^ id ^ "\n"
   | Expr ex -> string_of_expr ex ^ "\n"
   | If (e, s1, s2) ->

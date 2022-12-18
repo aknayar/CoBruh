@@ -73,7 +73,7 @@ expr:
     atom                           { $1 }
   | LSQUARE atom_list RSQUARE      { ArrayLit $2 }
   | ID                             { Id $1 }
-  | ID LSQUARE expr RSQUARE        { Elem ($1, $3) }
+  | expr LSQUARE expr RSQUARE      { Elem ($1, $3) }
   | expr PLUS expr                 { Binop ($1, Plus, $3) }
   | expr MINUS expr                { Binop ($1, Minus, $3) }
   | expr TIMES expr                { Binop ($1, Times, $3) }
@@ -120,7 +120,7 @@ stmt:
     expr EOL                                                                         { Expr $1 }
   | dtype ID ASSIGN expr EOL                                                         { Assign ($1, $2, $4) } 
   | ID ASSIGN expr EOL                                                               { InferAssign (Id $1, $3) }
-  | ID LSQUARE expr RSQUARE ASSIGN expr EOL                                          { InferAssign (Elem ($1, $3), $6) }
+  | ID LSQUARE expr RSQUARE ASSIGN expr EOL                                          { InferAssign (Elem (Id $1, $3), $6) }
   | atomic_dtype LSQUARE expr RSQUARE ID EOL                                         { Alloc ($1, $3, $5) }
   | IF expr COLON EOL INDENT stmt_list DEDENT                                        { If ($2, $6, []) }
   | IF expr COLON EOL INDENT stmt_list DEDENT ELSE COLON EOL INDENT stmt_list DEDENT { If ($2, $6, $12) }
@@ -136,5 +136,5 @@ atomic_dtype:
   | STRING { String }
 
 dtype:
-    atomic_dtype          { $1 }
-  | dtype LSQUARE RSQUARE { Array $1 }
+    atomic_dtype                 { $1 }
+  | atomic_dtype LSQUARE RSQUARE { Array $1 }
