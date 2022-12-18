@@ -81,11 +81,11 @@ expr:
   | expr PLUS expr            { Binop ($1, Plus, $3) }
   | expr MINUS expr           { Binop ($1, Minus, $3) }
   | expr TIMES expr           { Binop ($1, Times, $3) }
-  | expr INTDIV expr          { Binop ($1, IntDiv, $3) }
+  | expr INTDIV expr          { ECall ("intdiv", [$1; $3]) }
   | expr DIV expr             { Binop ($1, Div, $3) }
   | expr MOD expr             { Binop ($1, Mod, $3) }
   | MINUS expr %prec UMINUS   { Unop (Neg, $2) }
-  | PIPE expr PIPE            { Unop (Abs, $2) }
+  | PIPE expr PIPE            { ECall ("abs", [$2]) }
   | expr EQ expr              { Binop ($1, Eq, $3) }
   | expr NEQ expr             { Binop ($1, Neq, $3) }
   | expr LT expr              { Binop ($1, Less, $3) }
