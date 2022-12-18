@@ -1,1 +1,1 @@
-Error in semantics: if must take in boolean, but character is passed
+Error in semantics: if expects boolean but got character

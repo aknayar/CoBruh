@@ -1,1 +1,1 @@
-Error in semantics: variable type does not match assigned value for beans
+Error in semantics: variables can be assigned to only one type, but beans is assigned to both boolean and number
