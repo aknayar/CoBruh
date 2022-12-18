@@ -29,6 +29,7 @@
 %left PLUS MINUS
 %left TIMES INTDIV DIV MOD
 %nonassoc UMINUS
+%nonassoc LSQUARE RSQUARE
 
 %%
 
@@ -46,7 +47,6 @@ vdecl:
 bind:
   dtype ID { ($1, $2) }
 
-/* functions with nonempty parameters */
 params_list:
     bind                   { [$1] }
   | bind COMMA params_list { $1::$3 }
@@ -55,7 +55,10 @@ opt_params_list:
     NONE        { [] }
   | params_list { $1 }
 
-/* define foo(number bar -> string) */
+func_rtype:
+    dtype { $1 }
+  | NONE  { None }
+
 fdecl:
   DEFINE ID LPAREN opt_params_list GIVES func_rtype RPAREN COLON EOL INDENT stmt_list DEDENT
   {
@@ -67,32 +70,43 @@ fdecl:
     }
   }
 
+fcall:
+  ID LPAREN expr_list_opt RPAREN { ($1, $3) }
+
 expr:
-    NUMBERLIT                      { NumberLit $1 }
-  | BOOLLIT                        { BoolLit $1 }
-  | CHARLIT                        { CharLit $1 }
-  | STRINGLIT                      { StringLit $1 }
-  | ID                             { Id $1 }
-  | expr PLUS expr                 { Binop ($1, Plus, $3) }
-  | expr MINUS expr                { Binop ($1, Minus, $3) }
-  | expr TIMES expr                { Binop ($1, Times, $3) }
-  | expr INTDIV expr               { Binop ($1, IntDiv, $3) }
-  | expr DIV expr                  { Binop ($1, Div, $3) }
-  | expr MOD expr                  { Binop ($1, Mod, $3) }
-  | MINUS expr %prec UMINUS        { Unop (Neg, $2) }
-  | PIPE expr PIPE                 { Unop (Abs, $2) }
-  | expr EQ expr                   { Binop ($1, Eq, $3) }
-  | expr NEQ expr                  { Binop ($1, Neq, $3) }
-  | expr LT expr                   { Binop ($1, Less, $3) }
-  | expr LEQ expr                  { Binop ($1, Leq, $3) }
-  | expr GT expr                   { Binop ($1, Greater, $3) }
-  | expr GEQ expr                  { Binop ($1, Geq, $3) }
-  | expr AND expr                  { Binop ($1, And, $3) }
-  | expr OR expr                   { Binop ($1, Or, $3) }
-  | NOT expr                       { Unop (Not, $2) }
-  | LPAREN expr RPAREN             { $2 }
-  | ID LPAREN expr_list_opt RPAREN { Call ($1, $3) }
-  | ID LSQUARE expr RSQUARE        { Elem ($1, $3) }
+    atom                      { $1 }
+  | LSQUARE atom_list RSQUARE { ArrayLit $2 }
+  | ID                        { Id $1 }
+  | expr LSQUARE expr RSQUARE { Elem ($1, $3) }
+  | expr PLUS expr            { Binop ($1, Plus, $3) }
+  | expr MINUS expr           { Binop ($1, Minus, $3) }
+  | expr TIMES expr           { Binop ($1, Times, $3) }
+  | expr INTDIV expr          { Binop ($1, IntDiv, $3) }
+  | expr DIV expr             { Binop ($1, Div, $3) }
+  | expr MOD expr             { Binop ($1, Mod, $3) }
+  | MINUS expr %prec UMINUS   { Unop (Neg, $2) }
+  | PIPE expr PIPE            { Unop (Abs, $2) }
+  | expr EQ expr              { Binop ($1, Eq, $3) }
+  | expr NEQ expr             { Binop ($1, Neq, $3) }
+  | expr LT expr              { Binop ($1, Less, $3) }
+  | expr LEQ expr             { Binop ($1, Leq, $3) }
+  | expr GT expr              { Binop ($1, Greater, $3) }
+  | expr GEQ expr             { Binop ($1, Geq, $3) }
+  | expr AND expr             { Binop ($1, And, $3) }
+  | expr OR expr              { Binop ($1, Or, $3) }
+  | NOT expr                  { Unop (Not, $2) }
+  | LPAREN expr RPAREN        { $2 }
+  | fcall                     { ECall (fst $1, snd $1) }
+
+atom:
+    NUMBERLIT { NumberLit $1 }
+  | BOOLLIT   { BoolLit $1 }
+  | CHARLIT   { CharLit $1 }
+  | STRINGLIT { StringLit $1 }
+
+atom_list:
+    atom                 { [$1] }
+  | atom COMMA atom_list { $1::$3 }
 
 expr_list_opt:
     /* nothing */ { [] }
@@ -107,27 +121,24 @@ stmt_list:
   | stmt stmt_list { $1::$2 }
 
 stmt:
-    expr EOL                                                                         { Expr $1 }
-  | dtype ID ASSIGN expr EOL                                                         { Assign ($1, $2, $4) } 
-  | ID ASSIGN expr EOL                                                               { InferAssign ($1, $3) }
-  | dtype ID LSQUARE expr RSQUARE EOL                                                { Alloc ($1, $2, $4) }
-  | dtype ID ASSIGN LSQUARE expr_list RSQUARE EOL                                    { Assign (Array $1, $2, ArrayLit $5) }
-  | ID ASSIGN LSQUARE expr_list RSQUARE EOL                                          { InferAssign ($1, ArrayLit $4) }
-  | ID LSQUARE expr RSQUARE ASSIGN expr EOL                                          { ArrayIndex ($1, $3, $6) }
+    dtype ID ASSIGN expr EOL                                                         { Assign ($1, $2, $4) } 
+  | ID ASSIGN expr EOL                                                               { InferAssign (Id $1, $3) }
+  | ID LSQUARE expr RSQUARE ASSIGN expr EOL                                          { InferAssign (Elem (Id $1, $3), $6) }
+  | atomic_dtype LSQUARE expr RSQUARE ID EOL                                         { Alloc ($1, $3, $5) }
   | IF expr COLON EOL INDENT stmt_list DEDENT                                        { If ($2, $6, []) }
   | IF expr COLON EOL INDENT stmt_list DEDENT ELSE COLON EOL INDENT stmt_list DEDENT { If ($2, $6, $12) }
   | LOOP expr COLON EOL INDENT stmt_list DEDENT                                      { CondLoop ($2, $6) }
   | RETURN expr EOL                                                                  { Return $2 }
   | CONTINUE EOL                                                                     { Continue }
   | STOP EOL                                                                         { Stop }
+  | fcall EOL                                                                        { SCall (fst $1, snd $1) }
+
+atomic_dtype:
+    NUMBER { Number }
+  | BOOL   { Bool }
+  | CHAR   { Char }
+  | STRING { String }
 
 dtype:
-    NUMBER     { Number }
-  | BOOL       { Bool }
-  | CHAR       { Char }
-  | STRING     { String }
-
-/* allows functions to return none */
-func_rtype:
-    dtype { $1 }
-  | NONE  { None }
+    atomic_dtype                 { $1 }
+  | atomic_dtype LSQUARE RSQUARE { Array $1 }

@@ -35,23 +35,21 @@ type expr =
   | StringLit of string 
   | ArrayLit of expr list
   | Id of string 
+  | Elem of expr * expr
   | Binop of expr * bop * expr
   | Unop of uop * expr
-  | Call of string * expr list
-  | Elem of string * expr
+  | ECall of string * expr list
   
 type stmt = 
-    Expr of expr
-  | Assign of dtype * string * expr
-  | InferAssign of string * expr
-  | Alloc of dtype * string * expr
-  | ArrayIndex of string * expr * expr
+    Assign of dtype * string * expr
+  | InferAssign of expr * expr
+  | Alloc of dtype * expr * string
   | If of expr * stmt list * stmt list
-  | IterLoop of string * expr * expr * expr * stmt list
   | CondLoop of expr * stmt list
   | Return of expr
   | Continue
   | Stop
+  | SCall of string * expr list
 
 type bind = dtype * string (* number x *)
 
@@ -71,6 +69,7 @@ type func = {
 }
 
 type program = bind list * func list * stmt list
+
 
 let curr_indent_level = ref 0
 
@@ -106,21 +105,19 @@ let rec string_of_expr = function
   | StringLit s -> "\"" ^ s ^ "\""
   | ArrayLit a -> "[" ^ String.concat ", " (List.map string_of_expr a) ^ "]"
   | Id id -> id
+  | Elem (l, e) -> string_of_expr l ^ "[" ^ string_of_expr e ^ "]"
   | Binop (e1, op, e2) -> string_of_expr e1 ^ " " ^ string_of_bop op ^ " " ^ string_of_expr e2
   | Unop (op, e) -> (match op with
       Not -> "not " ^ string_of_expr e
     | Neg -> "-" ^ string_of_expr e
     | Abs -> "|" ^ string_of_expr e ^ "|")
-  | Call (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
-  | Elem (l, e) -> l ^ "[" ^ string_of_expr e ^ "]"
+  | ECall (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
 
 let rec string_of_stmt s = 
   let string_of_stmt_raw = function
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ "\n"
-  | InferAssign (id, e) -> id ^ " is " ^ string_of_expr e ^ "\n"
-  | Alloc (t, id, n) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^"]\n"
-  | ArrayIndex (id, ind, e) -> id ^ "[" ^ string_of_expr ind ^ "] is " ^ string_of_expr e ^ "\n"
-  | Expr ex -> string_of_expr ex ^ "\n"
+  | InferAssign (id, e) -> (match id with Id id -> id | Elem (id, ind) -> string_of_expr id ^ "[" ^ string_of_expr ind ^ "]" | _ -> raise (Failure "internal error")) ^ " is " ^ string_of_expr e ^ "\n"
+  | Alloc (t, n, id) -> string_of_dtype t ^ "[" ^ string_of_expr n ^ "] " ^ id ^ "\n"
   | If (e, s1, s2) ->
       let if_str = "if " ^ string_of_expr e ^ ":\n" in
       let _  = curr_indent_level := !curr_indent_level + 1 in
@@ -131,12 +128,6 @@ let rec string_of_stmt s =
       let else_stmts = String.concat "" (List.map string_of_stmt s2) in
       let _  = curr_indent_level := !curr_indent_level - 1 in
       if_str ^ if_stmts ^ else_str ^ else_stmts
-  | IterLoop (id, s, e, b, st) ->
-      let loop_str = "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ ":\n" in
-      let _  = curr_indent_level := !curr_indent_level + 1 in
-      let loop_stmts = String.concat "" (List.map string_of_stmt st) in
-      let _  = curr_indent_level := !curr_indent_level - 1 in
-      loop_str ^ loop_stmts
   | CondLoop (e, st) ->
       let loop_str = "loop " ^ string_of_expr e ^ ":\n" in
       let _  = curr_indent_level := !curr_indent_level + 1 in
@@ -146,7 +137,8 @@ let rec string_of_stmt s =
   | Return ex -> 
       "return " ^ string_of_expr ex ^ "\n"
   | Continue -> "continue\n"
-  | Stop -> "stop\n" in
+  | Stop -> "stop\n" 
+  | SCall (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")" in
       String.concat "" (List.init (!curr_indent_level) (fun _ -> "  ")) ^ (string_of_stmt_raw s)
 
 let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id
