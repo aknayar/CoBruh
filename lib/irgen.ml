@@ -208,14 +208,14 @@ let translate (binds, sfuncs): L.llmodule =
       
           ignore(L.build_cond_br bool_val block_bb merge_bb pred_builder);
           L.builder_at_end context merge_bb
-      | SContinue -> ignore(L.build_br (List.hd !prd_bbs) builder); builder
-      | SStop -> ignore(L.build_br (List.hd !merge_bbs) builder); builder
       | SReturn sexp -> 
           ignore (
             if fn.srtype = None then L.build_ret_void builder
             else L.build_ret (build_expr builder (snd sexp)) builder
           ); builder
-      | _ -> raise (Failure "unimplemented")
+      | SContinue -> ignore(L.build_br (List.hd !prd_bbs) builder); builder
+      | SStop -> ignore(L.build_br (List.hd !merge_bbs) builder); builder
+      | SSCall fn_call -> ignore (build_expr builder fn_call); builder
     and do_block scope bb block = 
       scopes := scope::(!scopes);
       let res = List.fold_left build_stmt (L.builder_at_end context bb) block in
