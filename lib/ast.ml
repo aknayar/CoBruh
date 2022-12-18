@@ -39,7 +39,9 @@ type expr =
   | Unop of uop * expr
   | Call of string * expr list
   | Elem of string * expr
-  
+
+type bind = dtype * string (* number x *)
+
 type stmt = 
     Expr of expr
   | Assign of dtype * string * expr
@@ -49,11 +51,11 @@ type stmt =
   | If of expr * stmt list * stmt list
   | IterLoop of string * expr * expr * expr * stmt list
   | CondLoop of expr * stmt list
+  | Fdecl of string * bind list * dtype * stmt list
   | Return of expr
   | Continue
   | Stop
 
-type bind = dtype * string (* number x *)
 
 (* 
   define foo(number bar -> string)
@@ -70,7 +72,7 @@ type func = {
   body: stmt list;
 }
 
-type program = bind list * func list * stmt list
+type program = stmt list
 
 let curr_indent_level = ref 0
 
@@ -114,7 +116,20 @@ let rec string_of_expr = function
   | Call (f, el) -> f ^ "(" ^ String.concat ", " (List.map string_of_expr el) ^ ")"
   | Elem (l, e) -> l ^ "[" ^ string_of_expr e ^ "]"
 
-let rec string_of_stmt s = 
+let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id
+and string_of_func_params (binds: bind list) = 
+  match binds with
+      [] -> "none"
+    | _ -> String.concat ", " (List.map string_of_bind binds)
+and string_of_func (name, params, rtype, body) =
+  let func_def = "define " ^ name 
+  ^ " (" ^ string_of_func_params params
+  ^ " -> " ^ string_of_dtype rtype ^ "):\n" in
+  let _  = curr_indent_level := !curr_indent_level + 1 in
+  let func_stmts = String.concat "" (List.map string_of_stmt body) in
+  let _  = curr_indent_level := !curr_indent_level - 1 in
+  func_def ^ func_stmts
+and string_of_stmt s = 
   let string_of_stmt_raw = function
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ "\n"
   | InferAssign (id, e) -> id ^ " is " ^ string_of_expr e ^ "\n"
@@ -143,30 +158,13 @@ let rec string_of_stmt s =
       let loop_stmts = String.concat "" (List.map string_of_stmt st) in
       let _  = curr_indent_level := !curr_indent_level - 1 in
       loop_str ^ loop_stmts
+  | Fdecl (name, params, rtype, body) -> string_of_func name params rtype body
   | Return ex -> 
       "return " ^ string_of_expr ex ^ "\n"
   | Continue -> "continue\n"
   | Stop -> "stop\n" in
       String.concat "" (List.init (!curr_indent_level) (fun _ -> "  ")) ^ (string_of_stmt_raw s)
 
-let string_of_bind (b: bind) = let (t, id) = b in string_of_dtype t ^ " " ^ id
-
-let string_of_func_params (binds: bind list) = 
-  match binds with
-      [] -> "none"
-    | _ -> String.concat ", " (List.map string_of_bind binds)
-  
-let string_of_func (fn: func) =
-  let func_def = "define " ^ fn.fname 
-  ^ " (" ^ string_of_func_params fn.params
-  ^ " -> " ^ string_of_dtype fn.rtype ^ "):\n" in
-  let _  = curr_indent_level := !curr_indent_level + 1 in
-  let func_stmts = String.concat "" (List.map string_of_stmt fn.body) in
-  let _  = curr_indent_level := !curr_indent_level - 1 in
-  func_def ^ func_stmts
-
-let string_of_program (binds, funcs, stmts) =
-  "Parsed program: \n\n" ^
-  String.concat "\n" (List.map string_of_bind binds) ^ "\n" ^
-  String.concat "" (List.map string_of_func funcs) ^
-  String.concat "" (List.map string_of_stmt stmts)
+let string_of_program stmts
+ =
+  "Parsed program: \n\n" ^ String.concat "" (List.map string_of_stmt stmts)

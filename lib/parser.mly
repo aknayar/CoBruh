@@ -33,12 +33,7 @@
 %%
 
 program:
-  decls stmt_list EOF { (List.rev (fst $1), List.rev (snd $1), $2) }
-
-decls:
-   /* nothing */ { ([], [])               }
- | decls vdecl { (($2 :: fst $1), snd $1) }
- | decls fdecl { (fst $1, ($2 :: snd $1)) }
+  stmt_list EOF { $1 }
 
 vdecl:
   dtype ID EOL { ($1, $2) }
@@ -57,15 +52,7 @@ opt_params_list:
 
 /* define foo(number bar -> string) */
 fdecl:
-  DEFINE ID LPAREN opt_params_list GIVES func_rtype RPAREN COLON EOL INDENT stmt_list DEDENT
-  {
-    {
-      fname=$2;
-      params=$4;
-      rtype=$6;
-      body=$11
-    }
-  }
+  DEFINE ID LPAREN opt_params_list GIVES func_rtype RPAREN COLON EOL INDENT stmt_list DEDENT { Fdecl ($2, $4, $6, $11) }
 
 expr:
     NUMBERLIT                      { NumberLit $1 }
@@ -120,6 +107,8 @@ stmt:
   | RETURN expr EOL                                                                  { Return $2 }
   | CONTINUE EOL                                                                     { Continue }
   | STOP EOL                                                                         { Stop }
+  | fdecl                                                                            { $1 }
+  | vdecl                                                                            { $1 }
 
 dtype:
     NUMBER     { Number }
