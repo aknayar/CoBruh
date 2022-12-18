@@ -33,7 +33,7 @@ let internal_err = "internal error"
 let unimplemented_err = "unimplemented"
   
 let reserved_funcs = [("main", ([], None)); ("say", ([(Any, "arg")], None)); ("shout", ([(Any, "arg")], None));
-                      ("inputc", ([], Char)); ("inputn", ([], Number))]
+                      ("inputc", ([], Char)); ("inputn", ([], Number)); ("abs", ([(Number, "n")], Number))]
 
 let check (binds, funcs, stmts): sprogram =
 
@@ -57,7 +57,8 @@ let check (binds, funcs, stmts): sprogram =
       else if Hashtbl.mem sfuncs fn.fname then raise (Failure (duplicate_func_err fn.fname))
       else Hashtbl.add sfuncs fn.fname (fn.params, fn.rtype)
   ) funcs;
-  let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}] in
+  let abs = {fname="abs"; params=[(Number, "n")]; rtype=Number; body=[If (Binop (Id ("n"), Less, NumberLit (0.)), [Return (Unop(Neg, Id("n")))], [Return (Id("n"))])]} in
+  let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}; abs] in
   List.iter (fun rfn -> Hashtbl.add sfuncs (fst rfn) (snd rfn)) reserved_funcs;
 
   let check_func fn = 
