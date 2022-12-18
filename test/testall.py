@@ -15,7 +15,7 @@ for file in os.listdir(directory):
         if filename.endswith(".out"):
             with open("main.ll", 'w') as writer:
                 writer.write(result.stdout.decode("utf-8"))
-            result = subprocess.run(f"lli main.ll".split(), stdout=subprocess.PIPE)
+            result = subprocess.run("lli main.ll".split(), stdout=subprocess.PIPE)
         result = result.stdout.decode("utf-8") 
 
         with open(file_ans_loc, 'r') as f:
