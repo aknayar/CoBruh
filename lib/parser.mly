@@ -71,7 +71,7 @@ fdecl:
   }
 
 fcall:
-  ID LPAREN expr_list_opt RPAREN { Call ($1, $3) }
+  ID LPAREN expr_list_opt RPAREN { ($1, $3) }
 
 expr:
     atom                      { $1 }
@@ -96,7 +96,7 @@ expr:
   | expr OR expr              { Binop ($1, Or, $3) }
   | NOT expr                  { Unop (Not, $2) }
   | LPAREN expr RPAREN        { $2 }
-  | fcall                     { $1 }
+  | fcall                     { ECall (fst $1, snd $1) }
 
 atom:
     NUMBERLIT { NumberLit $1 }
@@ -131,7 +131,7 @@ stmt:
   | RETURN expr EOL                                                                  { Return $2 }
   | CONTINUE EOL                                                                     { Continue }
   | STOP EOL                                                                         { Stop }
-  | fcall                                                                            { $1 }
+  | fcall EOL                                                                        { SCall (fst $1, snd $1) }
 
 atomic_dtype:
     NUMBER { Number }

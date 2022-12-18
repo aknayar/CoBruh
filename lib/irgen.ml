@@ -140,11 +140,11 @@ let translate (binds, sfuncs): L.llmodule =
               | Neg -> L.build_fneg
               | _   -> raise (Failure "unimplemented")
           ) e' "tmp" builder
-      | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false false ; (build_expr builder (snd e)) |] "" builder
-      | SCall ("shout", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false true ; (build_expr builder (snd e)) |] "" builder
-      | SCall ("inputc", []) -> read_typ Char
-      | SCall ("inputn", []) -> read_typ Number
-      | SCall (id, params) -> 
+      | SECall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false false ; (build_expr builder (snd e)) |] "" builder
+      | SECall ("shout", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false true ; (build_expr builder (snd e)) |] "" builder
+      | SECall ("inputc", []) -> read_typ Char
+      | SECall ("inputn", []) -> read_typ Number
+      | SECall (id, params) -> 
           let (fdef, fn') = Hashtbl.find all_funcs id in
           let llargs = List.rev (List.map (fun item -> build_expr builder (snd item)) (List.rev params)) in
           let res = if fn'.srtype = None then "" else id ^ "_result" in
@@ -158,8 +158,7 @@ let translate (binds, sfuncs): L.llmodule =
     in
 
     let rec build_stmt builder = function
-        SExpr sexp -> ignore (build_expr builder sexp); builder
-      | SInit (typ, id, sexp) -> 
+        SInit (typ, id, sexp) -> 
           let local = L.build_alloca (lltype_of_dtype typ) id builder
           in Hashtbl.add (List.hd !scopes) id local;
           let sexp' = build_expr builder sexp in

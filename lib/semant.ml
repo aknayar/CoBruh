@@ -118,7 +118,7 @@ let check (binds, funcs, stmts): sprogram =
               | _ -> raise (Failure (invalid_unop_args_err (match op with Not -> "not" | Neg -> "negation" | Abs -> "magnitude")))
           ) in
           (res_type, SUnop (op, exp_sx))
-      | Call (id, passed_params) -> 
+      | ECall (id, passed_params) -> 
           let (fn_params, fn_rtype) = 
             if not (Hashtbl.mem sfuncs id) then raise (Failure (missing_func_err id))
             else Hashtbl.find sfuncs id in 
@@ -135,12 +135,11 @@ let check (binds, funcs, stmts): sprogram =
                     Failure (mismatched_func_args_err id (string_of_dtype (fst fn_param)) (string_of_dtype passed_dtype))
                   )
                   else (passed_dtype, passed_sexpr)
-              ) passed_params fn_params in (fn_rtype, SCall (id, res))
+              ) passed_params fn_params in (fn_rtype, SECall (id, res))
     in
 
     let rec check_stmt = function
-        Expr exp -> SExpr (snd (check_expr exp))
-      | Assign (typ, id, exp) -> 
+        Assign (typ, id, exp) -> 
           let (exp_typ, exp_sx) = check_expr exp in 
           if exp_typ = None then raise (Failure (none_assignment_err id))
           else if exp_typ <> typ then raise (Failure (invalid_assignment_err id exp_typ typ))
@@ -216,6 +215,7 @@ let check (binds, funcs, stmts): sprogram =
       | Return exp -> SReturn (check_expr exp)
       | Continue -> SContinue
       | Stop -> SStop
+      | SCall (id, params) -> SSCall (snd (check_expr (ECall (id, params))))
     and check_block scope block = 
       let _ = scopes := scope::(!scopes) in
       let res = List.map check_stmt block in

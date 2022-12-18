@@ -11,17 +11,17 @@ and sx =
   | SElem of sx * sx
   | SBinop of sx * bop * sx
   | SUnop of uop * sx
-  | SCall of string * sexpr list
+  | SECall of string * sexpr list
 
 type sstmt = 
-    SExpr of sx
-  | SInit of dtype * string * sx
+    SInit of dtype * string * sx
   | SReassign of sx * sx
   | SIf of sx * sstmt list * sstmt list
   | SCondLoop of sx * sstmt list
   | SReturn of sexpr
   | SContinue
   | SStop
+  | SSCall of sx
 
 type sfunc = {
   sfname: string;
