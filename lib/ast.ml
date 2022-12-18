@@ -35,19 +35,17 @@ type expr =
   | StringLit of string 
   | ArrayLit of expr list
   | Id of string 
+  | Elem of string * expr
   | Binop of expr * bop * expr
   | Unop of uop * expr
   | Call of string * expr list
-  | Elem of string * expr
   
 type stmt = 
     Expr of expr
   | Assign of dtype * string * expr
-  | InferAssign of string * expr
+  | InferAssign of expr * expr
   | Alloc of dtype * string * expr
-  | ArrayIndex of string * expr * expr
   | If of expr * stmt list * stmt list
-  | IterLoop of string * expr * expr * expr * stmt list
   | CondLoop of expr * stmt list
   | Return of expr
   | Continue
@@ -72,6 +70,7 @@ type func = {
 
 type program = bind list * func list * stmt list
 
+
 let curr_indent_level = ref 0
 
 let rec string_of_dtype = function
@@ -79,7 +78,7 @@ let rec string_of_dtype = function
   | Bool -> "boolean"
   | Char -> "character"
   | String -> "string"
-  | Array typ -> string_of_dtype typ ^ "[]"
+  | Array typ -> string_of_dtype typ ^ " array"
   | None -> "none"
   | Any -> "any"
 
@@ -99,6 +98,7 @@ let string_of_bop = function
   | And -> "and"
   | Or -> "or"
 
+(*
 let rec string_of_expr = function
     NumberLit n -> if classify_float (fst (modf n)) == FP_zero then string_of_int (Float.to_int n) else string_of_float n
   | BoolLit b -> if b then "true" else "false"
@@ -170,3 +170,4 @@ let string_of_program (binds, funcs, stmts) =
   String.concat "\n" (List.map string_of_bind binds) ^ "\n" ^
   String.concat "" (List.map string_of_func funcs) ^
   String.concat "" (List.map string_of_stmt stmts)
+ *)
