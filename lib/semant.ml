@@ -33,7 +33,8 @@ let internal_err = "internal error"
 let unimplemented_err = "unimplemented"
   
 let reserved_funcs = [("main", ([], None)); ("say", ([(Any, "arg")], None)); ("shout", ([(Any, "arg")], None));
-                      ("inputc", ([], Char)); ("inputn", ([], Number)); ("abs", ([(Number, "n")], Number))]
+                      ("inputc", ([], Char)); ("inputn", ([], Number)); ("abs", ([(Number, "n")], Number));
+                      ("intdiv", ([(Number, "a"); (Number, "b")], Number))]
 
 let check (binds, funcs, stmts): sprogram =
 
@@ -57,8 +58,9 @@ let check (binds, funcs, stmts): sprogram =
       else if Hashtbl.mem sfuncs fn.fname then raise (Failure (duplicate_func_err fn.fname))
       else Hashtbl.add sfuncs fn.fname (fn.params, fn.rtype)
   ) funcs;
-  let abs = {fname="abs"; params=[(Number, "n")]; rtype=Number; body=[If (Binop (Id ("n"), Less, NumberLit (0.)), [Return (Unop(Neg, Id("n")))], [Return (Id("n"))])]} in
-  let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}; abs] in
+  let abs = {fname="abs"; params=[(Number, "n")]; rtype=Number; body=[If(Binop(Id("n"), Less, NumberLit(0.)), [Return(Unop(Neg, Id("n")))], [Return(Id("n"))])]} in
+  let intdiv = {fname="intdiv"; params=[(Number, "a"); (Number, "b")]; rtype=Number; body=[Return(Binop(Binop(Id("a"), Minus, Binop(Id("a"), Mod, Id("b"))), Div, Id("b")))]} in
+  let funcs = funcs @ [{fname="main"; params=[]; rtype=None; body=stmts}; abs; intdiv] in
   List.iter (fun rfn -> Hashtbl.add sfuncs (fst rfn) (snd rfn)) reserved_funcs;
 
   let check_func fn = 
@@ -100,10 +102,6 @@ let check (binds, funcs, stmts): sprogram =
           else let res_type = (
             match op with 
                 (Plus | Minus | Times | Div | Mod) when exp1_typ = Number -> Number
-              | IntDiv when exp1_typ = Number -> 
-                  exp1_sx := SBinop (!exp1_sx, Minus, SBinop(!exp1_sx, Mod, exp2_sx)); 
-                  tmp_op := Div; 
-                  Number
               | (Eq | Neq | Less | Leq | Greater | Geq) when exp1_typ = Number -> Bool
               | (And | Or) when exp1_typ = Bool -> Bool
               | _ -> raise (Failure (invalid_bop_args_err (string_of_bop op)))
