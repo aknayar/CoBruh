@@ -11,13 +11,10 @@ for file in os.listdir(directory):
     file_ans_loc = os.path.join(TEST_DIR, filename)
     file_loc = os.path.join(TEST_DIR, '.'.join(filename.split('.')[:-1] + ["bruh"]))
     if filename.endswith(".err") or filename.endswith(".out"):
-        result = None
-        if filename.endswith(".err"): 
-            result = subprocess.run(f"dune exec -- CoBruh -c {file_loc}".split(), stdout=subprocess.PIPE)
-        else:  
-            ir_result = subprocess.run(f"dune exec -- CoBruh -c {file_loc}".split(), stdout=subprocess.PIPE)
+        result = subprocess.run(f"dune exec -- CoBruh -c {file_loc}".split(), stdout=subprocess.PIPE)
+        if filename.endswith(".out"):
             with open("main.ll", 'w') as writer:
-                writer.write(ir_result.stdout.decode("utf-8"))
+                writer.write(result.stdout.decode("utf-8"))
             result = subprocess.run(f"lli main.ll".split(), stdout=subprocess.PIPE)
         result = result.stdout.decode("utf-8") 
 
