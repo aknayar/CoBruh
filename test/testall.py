@@ -1,45 +1,28 @@
 import os
 import subprocess
 
+TEST_DIR = "./tests/"
 ctr = 0
-# all the test files are in /tests
-directory = os.fsencode("./tests")
+directory = os.fsencode(TEST_DIR)
     
 for file in os.listdir(directory):
     ctr += 1
-    # run the file
-    # get the output
-    # compare with corresponding .err or .out file
-    # if it doens't match, throw an error describing what went wrong
     filename = os.fsdecode(file)
-    if filename.endswith(".err"): 
-        file_ans_loc = os.path.join("./tests/", filename)
-        file_loc = os.path.join("./tests/", '.'.join(filename.split('.')[:-1] + ["bruh"]))
-  
-        result = subprocess.run(f"dune exec -- CoBruh -c {file_loc}".split(), stdout=subprocess.PIPE)
+    file_ans_loc = os.path.join(TEST_DIR, filename)
+    file_loc = os.path.join(TEST_DIR, '.'.join(filename.split('.')[:-1] + ["bruh"]))
+    if filename.endswith(".err") or filename.endswith(".out"):
+        result = None
+        if filename.endswith(".err"): 
+            result = subprocess.run(f"dune exec -- CoBruh -c {file_loc}".split(), stdout=subprocess.PIPE)
+        else:  
+            ir_result = subprocess.run(f"dune exec -- CoBruh -c {file_loc}".split(), stdout=subprocess.PIPE)
+            with open("main.ll", 'w') as writer:
+                writer.write(ir_result.stdout.decode("utf-8"))
+            result = subprocess.run(f"lli main.ll".split(), stdout=subprocess.PIPE)
         result = result.stdout.decode("utf-8") 
 
-        ans = None
         with open(file_ans_loc, 'r') as f:
             ans = f.read()
-        
-        if not ans.strip() == result.strip():
-            raise Exception(f"Incorrect output on test case: {file_loc}\nOutput: {result}Expected output: {ans}")
-
-    if filename.endswith(".out"):
-        file_ans_loc = os.path.join("./tests/", filename)
-        file_loc = os.path.join("./tests/", '.'.join(filename.split('.')[:-1] + ["bruh"]))
-  
-        ir_result = subprocess.run(f"dune exec -- CoBruh -c {file_loc}".split(), stdout=subprocess.PIPE)
-        with open("main.ll", 'w') as writer:
-            writer.write(ir_result.stdout.decode("utf-8"))
-        result = subprocess.run(f"lli main.ll".split(), stdout=subprocess.PIPE)
-        result = result.stdout.decode("utf-8") 
-
-        ans = None
-        with open(file_ans_loc, 'r') as f:
-            ans = f.read()
-      
-        if not ans.strip() == result.strip():
-            raise Exception(f"Incorrect output on test case: {file_loc}\nOutput: {result}Expected output: {ans}")
+            if not ans.strip() == result.strip():
+                raise Exception(f"Incorrect output on test case: {file_loc}\nOutput: {result}Expected output: {ans}")
 print(f"\nPassed {ctr}/{ctr} test cases")
