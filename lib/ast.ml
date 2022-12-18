@@ -44,7 +44,7 @@ type stmt =
     Expr of expr
   | Assign of dtype * string * expr
   | InferAssign of expr * expr
-  | Alloc of dtype * string * expr
+  | Alloc of dtype * expr * string
   | If of expr * stmt list * stmt list
   | CondLoop of expr * stmt list
   | Return of expr
