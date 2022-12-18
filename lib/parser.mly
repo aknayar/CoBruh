@@ -29,6 +29,7 @@
 %left PLUS MINUS
 %left TIMES INTDIV DIV MOD
 %nonassoc UMINUS
+%nonassoc LSQUARE RSQUARE
 
 %%
 
@@ -69,30 +70,33 @@ fdecl:
     }
   }
 
+fcall:
+  ID LPAREN expr_list_opt RPAREN { Call ($1, $3) }
+
 expr:
-    atom                           { $1 }
-  | LSQUARE atom_list RSQUARE      { ArrayLit $2 }
-  | ID                             { Id $1 }
-  | expr LSQUARE expr RSQUARE      { Elem ($1, $3) }
-  | expr PLUS expr                 { Binop ($1, Plus, $3) }
-  | expr MINUS expr                { Binop ($1, Minus, $3) }
-  | expr TIMES expr                { Binop ($1, Times, $3) }
-  | expr INTDIV expr               { Binop ($1, IntDiv, $3) }
-  | expr DIV expr                  { Binop ($1, Div, $3) }
-  | expr MOD expr                  { Binop ($1, Mod, $3) }
-  | MINUS expr %prec UMINUS        { Unop (Neg, $2) }
-  | PIPE expr PIPE                 { Unop (Abs, $2) }
-  | expr EQ expr                   { Binop ($1, Eq, $3) }
-  | expr NEQ expr                  { Binop ($1, Neq, $3) }
-  | expr LT expr                   { Binop ($1, Less, $3) }
-  | expr LEQ expr                  { Binop ($1, Leq, $3) }
-  | expr GT expr                   { Binop ($1, Greater, $3) }
-  | expr GEQ expr                  { Binop ($1, Geq, $3) }
-  | expr AND expr                  { Binop ($1, And, $3) }
-  | expr OR expr                   { Binop ($1, Or, $3) }
-  | NOT expr                       { Unop (Not, $2) }
-  | LPAREN expr RPAREN             { $2 }
-  | ID LPAREN expr_list_opt RPAREN { Call ($1, $3) }
+    atom                      { $1 }
+  | LSQUARE atom_list RSQUARE { ArrayLit $2 }
+  | ID                        { Id $1 }
+  | expr LSQUARE expr RSQUARE { Elem ($1, $3) }
+  | expr PLUS expr            { Binop ($1, Plus, $3) }
+  | expr MINUS expr           { Binop ($1, Minus, $3) }
+  | expr TIMES expr           { Binop ($1, Times, $3) }
+  | expr INTDIV expr          { Binop ($1, IntDiv, $3) }
+  | expr DIV expr             { Binop ($1, Div, $3) }
+  | expr MOD expr             { Binop ($1, Mod, $3) }
+  | MINUS expr %prec UMINUS   { Unop (Neg, $2) }
+  | PIPE expr PIPE            { Unop (Abs, $2) }
+  | expr EQ expr              { Binop ($1, Eq, $3) }
+  | expr NEQ expr             { Binop ($1, Neq, $3) }
+  | expr LT expr              { Binop ($1, Less, $3) }
+  | expr LEQ expr             { Binop ($1, Leq, $3) }
+  | expr GT expr              { Binop ($1, Greater, $3) }
+  | expr GEQ expr             { Binop ($1, Geq, $3) }
+  | expr AND expr             { Binop ($1, And, $3) }
+  | expr OR expr              { Binop ($1, Or, $3) }
+  | NOT expr                  { Unop (Not, $2) }
+  | LPAREN expr RPAREN        { $2 }
+  | fcall                     { $1 }
 
 atom:
     NUMBERLIT { NumberLit $1 }
@@ -117,8 +121,7 @@ stmt_list:
   | stmt stmt_list { $1::$2 }
 
 stmt:
-    expr EOL                                                                         { Expr $1 }
-  | dtype ID ASSIGN expr EOL                                                         { Assign ($1, $2, $4) } 
+    dtype ID ASSIGN expr EOL                                                         { Assign ($1, $2, $4) } 
   | ID ASSIGN expr EOL                                                               { InferAssign (Id $1, $3) }
   | ID LSQUARE expr RSQUARE ASSIGN expr EOL                                          { InferAssign (Elem (Id $1, $3), $6) }
   | atomic_dtype LSQUARE expr RSQUARE ID EOL                                         { Alloc ($1, $3, $5) }
@@ -128,6 +131,7 @@ stmt:
   | RETURN expr EOL                                                                  { Return $2 }
   | CONTINUE EOL                                                                     { Continue }
   | STOP EOL                                                                         { Stop }
+  | fcall                                                                            { $1 }
 
 atomic_dtype:
     NUMBER { Number }
