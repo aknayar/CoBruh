@@ -78,7 +78,7 @@ let rec string_of_dtype = function
   | Bool -> "boolean"
   | Char -> "character"
   | String -> "string"
-  | Array typ -> string_of_dtype typ ^ " array"
+  | Array typ -> string_of_dtype typ ^ "[]"
   | None -> "none"
   | Any -> "any"
 
@@ -98,7 +98,6 @@ let string_of_bop = function
   | And -> "and"
   | Or -> "or"
 
-(*
 let rec string_of_expr = function
     NumberLit n -> if classify_float (fst (modf n)) == FP_zero then string_of_int (Float.to_int n) else string_of_float n
   | BoolLit b -> if b then "true" else "false"
@@ -117,9 +116,8 @@ let rec string_of_expr = function
 let rec string_of_stmt s = 
   let string_of_stmt_raw = function
     Assign (t, id, e) -> string_of_dtype t ^ " " ^ id ^ " is " ^ string_of_expr e ^ "\n"
-  | InferAssign (id, e) -> id ^ " is " ^ string_of_expr e ^ "\n"
-  | Alloc (t, id, n) -> string_of_dtype t ^ " " ^ id ^ "[" ^ string_of_expr n ^"]\n"
-  | ArrayIndex (id, ind, e) -> id ^ "[" ^ string_of_expr ind ^ "] is " ^ string_of_expr e ^ "\n"
+  | InferAssign (id, e) -> (match id with Id id -> id | Elem (id, ind) -> id ^ "[" ^ string_of_expr ind ^ "]" | _ -> raise (Failure "internal error")) ^ " is " ^ string_of_expr e ^ "\n"
+  | Alloc (t, n, id) -> string_of_dtype t ^ "[" ^ string_of_expr n ^ "] " ^ id ^ "\n"
   | Expr ex -> string_of_expr ex ^ "\n"
   | If (e, s1, s2) ->
       let if_str = "if " ^ string_of_expr e ^ ":\n" in
@@ -131,12 +129,6 @@ let rec string_of_stmt s =
       let else_stmts = String.concat "" (List.map string_of_stmt s2) in
       let _  = curr_indent_level := !curr_indent_level - 1 in
       if_str ^ if_stmts ^ else_str ^ else_stmts
-  | IterLoop (id, s, e, b, st) ->
-      let loop_str = "loop " ^ id ^ " in " ^ string_of_expr s ^ " to " ^ string_of_expr e ^ " by " ^ string_of_expr b ^ ":\n" in
-      let _  = curr_indent_level := !curr_indent_level + 1 in
-      let loop_stmts = String.concat "" (List.map string_of_stmt st) in
-      let _  = curr_indent_level := !curr_indent_level - 1 in
-      loop_str ^ loop_stmts
   | CondLoop (e, st) ->
       let loop_str = "loop " ^ string_of_expr e ^ ":\n" in
       let _  = curr_indent_level := !curr_indent_level + 1 in
@@ -170,4 +162,3 @@ let string_of_program (binds, funcs, stmts) =
   String.concat "\n" (List.map string_of_bind binds) ^ "\n" ^
   String.concat "" (List.map string_of_func funcs) ^
   String.concat "" (List.map string_of_stmt stmts)
- *)
