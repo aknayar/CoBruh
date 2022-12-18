@@ -140,7 +140,14 @@ let translate (binds, sfuncs): L.llmodule =
               | Neg -> L.build_fneg
               | _   -> raise (Failure "unimplemented")
           ) e' "tmp" builder
-      | SECall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false false ; (build_expr builder (snd e)) |] "" builder
+      | SECall ("say", [e]) -> 
+          match fst e with
+              Array typ -> (match typ with
+                  Boolean -> raise (Failure internal_err)
+                | Character -> raise (Failure internal_err)
+                | Number -> raise (Failure internal_err)
+                | String -> raise (Failure internal_err))
+            | _ -> L.build_call printf_func [| format_string_of_dtype (fst e) false false ; (build_expr builder (snd e)) |] "" builder
       | SECall ("shout", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false true ; (build_expr builder (snd e)) |] "" builder
       | SECall ("inputc", []) -> read_typ Char
       | SECall ("inputn", []) -> read_typ Number
