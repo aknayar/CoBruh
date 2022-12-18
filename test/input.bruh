@@ -7,11 +7,8 @@ define reverse(number n -> number):
     n is (n - n % 10) / 10
   return res
 
-define coin_change(number amount -> number):
-  number coins is [1, 2, 5]
-  number num_coins is 3
-
-  number dp[amount + 1]
+define coin_change(number[] coins, number num_coins, number amount -> number):
+  number[amount + 1] dp
   number ind is 0
   loop ind < amount + 1:
     dp[ind] is amount + 1
@@ -44,4 +41,4 @@ say(" is ")
 shout(reverse(x))
 
 say("Enter an amount: ")
-shout(coin_change(inputn()))
+shout(coin_change([1, 2, 5], 3, inputn()))
