@@ -47,14 +47,18 @@ let check (stmts): sprogram =
   
   (**** Check for reserved functions ****)
   let sfuncs = Hashtbl.create (List.length reserved_funcs) in
-  List.iter (
-    fun stmt -> match stmt with 
-        FuncDecl (fname, params, rtype, _) ->
-          if List.exists (fun rfn -> fname = fst rfn) reserved_funcs then raise (Failure (reserved_function_name_err fname))
-          else if Hashtbl.mem sfuncs fname then raise (Failure (duplicate_func_err fname))
-          else Hashtbl.add sfuncs fname (params, rtype)
-      | _ -> ()
-  ) stmts;
+  let rec check_for_funcs stmts = 
+    let check_for_func stmt = 
+      match stmt with 
+          FuncDecl (fname, params, rtype, body) ->
+            check_for_funcs body;
+            if List.exists (fun rfn -> fname = fst rfn) reserved_funcs then raise (Failure (reserved_function_name_err fname))
+            else if Hashtbl.mem sfuncs fname then raise (Failure (duplicate_func_err fname))
+            else Hashtbl.add sfuncs fname (params, rtype)
+        | _ -> ()
+    in List.iter check_for_func stmts
+  in check_for_funcs stmts;
+  
   let func = FuncDecl ("main", [], None, stmts) in
   Hashtbl.add sfuncs "main" ([], None);
   let scopes = ref [] in
