@@ -42,7 +42,11 @@ let check (binds, funcs, stmts): sprogram =
   List.iter (
     fun (typ, name) -> 
       if Hashtbl.mem globals name then raise (Failure (duplicate_id_err name))
-      else Hashtbl.add globals name typ
+      else Hashtbl.add globals name (
+        match typ with
+            FixedArray (typ', _) -> Array typ'
+          | _ as typ' -> typ'
+      )
   ) binds;
   
   (**** Check for reserved functions ****)
