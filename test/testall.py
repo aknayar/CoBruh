@@ -2,7 +2,7 @@ import os
 import subprocess
 
 TEST_DIR = "./tests/"
-COMPILER_DIR = "../_build/default/bin/main.exe"
+COMPILER_DIR = "../bin/main.exe"
 num_passed, num_total = 0, 0
 directory = os.fsencode(TEST_DIR)
     
