@@ -3,6 +3,8 @@ module L = Llvm
 open Ast
 open Sast
 
+let internal_err = "internal error"
+
 let translate (binds, sfuncs): L.llmodule = 
   let context = L.global_context () in
   let mdl = L.create_module context "CoBruh" in
@@ -20,13 +22,13 @@ let translate (binds, sfuncs): L.llmodule =
     | String -> L.pointer_type i8_t
     | Array typ -> L.pointer_type (lltype_of_dtype typ)
     | None -> void_t
-    | _ -> raise (Failure "internal error") 
+    | _ -> raise (Failure internal_err) 
   in
   let default_value = function
       Number -> L.const_float (lltype_of_dtype Number) 0.0
     | (Bool | Char) as typ -> L.const_int (lltype_of_dtype typ) 0
     | String -> L.const_pointer_null (lltype_of_dtype String)
-    | _ -> raise (Failure "internal error") 
+    | _ -> raise (Failure internal_err) 
   in
 
   let globals = Hashtbl.create (List.length binds) in
@@ -63,7 +65,7 @@ let translate (binds, sfuncs): L.llmodule =
         | Bool -> bool_format nl
         | Char -> char_format scan nl
         | String -> string_format nl
-        | _ -> raise (Failure "internal error")
+        | _ -> raise (Failure internal_err)
     ) in
 
     let body_scope = Hashtbl.create (List.length fn.sparams + List.length fn.sbody) in
@@ -82,23 +84,27 @@ let translate (binds, sfuncs): L.llmodule =
     in
     scopes := body_scope::(!scopes);
 
-    let rec build_expr builder (_, exp) = match exp with
+    let rec build_expr builder exp = match exp with
         SNumberLit n -> L.const_float (lltype_of_dtype Number) n
       | SBoolLit b -> L.const_int (lltype_of_dtype Bool) (if b then 1 else 0)
       | SCharLit c -> L.const_int (lltype_of_dtype Char) (Char.code c)
       | SStringLit s -> L.build_global_stringptr s "str" builder
-      | SArray arr -> 
-          let arr' = L.build_array_malloc (lltype_of_dtype (fst (List.hd arr))) (L.const_int i32_t (List.length arr)) "arr" builder in
-          List.iteri (
-            fun ind item -> 
-              let item' = build_expr builder item in
-              let ind' = L.build_in_bounds_gep arr' [| L.const_int i32_t ind |] "ind" builder in
-              ignore (L.build_store item' ind' builder)
-          ) arr; arr'
-      | SDefaultArray (typ, n) -> 
-          let size = build_expr builder n in
-          let size' = L.build_fptosi size i32_t "default_arr" builder in
-          L.build_array_malloc (lltype_of_dtype typ) size' "arr" builder 
+      | SArrayLit (typ, n, contents) -> (
+          match n with
+              Some n' -> 
+                let size = build_expr builder n' in
+                let size' = L.build_fptosi size i32_t "default_arr" builder in
+                L.build_array_malloc (lltype_of_dtype typ) size' "arr" builder
+            | None -> 
+                let contents' = Option.get contents in
+                let arr = L.build_array_malloc (lltype_of_dtype typ) (L.const_int i32_t (List.length contents')) "arr" builder in
+                List.iteri (
+                  fun ind item ->
+                    let item' = build_expr builder item in
+                    let ind' = L.build_in_bounds_gep arr [| L.const_int i32_t ind |] "ind" builder in
+                    ignore (L.build_store item' ind' builder)
+                ) contents'; arr
+        )
       | SId (id, sc) -> L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder
       | SBinop (e1, op, e2) ->
           let e1' = build_expr builder e1
@@ -118,7 +124,7 @@ let translate (binds, sfuncs): L.llmodule =
               | Leq     -> L.build_fcmp L.Fcmp.Ole
               | Greater -> L.build_fcmp L.Fcmp.Ogt
               | Geq     -> L.build_fcmp L.Fcmp.Oge
-              | IntDiv  -> raise (Failure "internal error")
+              | IntDiv  -> raise (Failure internal_err)
           ) e1' e2' "bop" builder
       | SUnop (op, e) ->
           let e' = build_expr builder e in
@@ -128,13 +134,13 @@ let translate (binds, sfuncs): L.llmodule =
               | Neg -> L.build_fneg
               | _   -> raise (Failure "unimplemented")
           ) e' "tmp" builder
-      | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false false ; (build_expr builder e) |] "" builder
-      | SCall ("shout", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false true ; (build_expr builder e) |] "" builder
+      | SCall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false false ; (build_expr builder (snd e)) |] "" builder
+      | SCall ("shout", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false true ; (build_expr builder (snd e)) |] "" builder
       | SCall ("inputc", []) -> read_typ Char
       | SCall ("inputn", []) -> read_typ Number
       | SCall (id, params) -> 
           let (fdef, fn') = Hashtbl.find all_funcs id in
-          let llargs = List.rev (List.map (build_expr builder) (List.rev params)) in
+          let llargs = List.rev (List.map (fun item -> build_expr builder (snd item)) (List.rev params)) in
           let res = if fn'.srtype = None then "" else id ^ "_result" in
           L.build_call fdef (Array.of_list llargs) res builder
       | SElem (id, sc, ind) -> 
@@ -153,22 +159,24 @@ let translate (binds, sfuncs): L.llmodule =
 
     let rec build_stmt builder = function
         SExpr sexp -> ignore (build_expr builder sexp); builder
-      | SInit (id, sexp) -> 
-          let typ = fst sexp in
+      | SInit (typ, id, sexp) -> 
           let local = L.build_alloca (lltype_of_dtype typ) id builder
           in Hashtbl.add (List.hd !scopes) id local;
           let sexp' = build_expr builder sexp in
           ignore (L.build_store sexp' local builder); builder
-      | SReassign (id, sc, sexp) -> 
+      | SReassign (lhs, sexp) -> 
           let sexp' = build_expr builder sexp in
-          ignore (L.build_store sexp' (Hashtbl.find (List.nth !scopes sc) id) builder); builder
-      | SArrayIndex (id, sc, ind, sexp) ->
-          let arr = L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder in
-          let loc = build_expr builder ind 
-          and sexp' = build_expr builder sexp in
-          let ind' = L.build_fptosi loc i32_t (id ^ "_ind") builder in
-          let elem = L.build_in_bounds_gep arr [| ind' |] (id ^ "_ind") builder in
-          ignore (L.build_store sexp' elem builder); builder
+          (
+            match lhs with
+                SId (id, sc) -> ignore (L.build_store sexp' (Hashtbl.find (List.nth !scopes sc) id) builder)
+              | SElem (id, sc, ind) -> 
+                  let arr = L.build_load (Hashtbl.find (List.nth !scopes sc) id) id builder in
+                  let loc = build_expr builder ind in
+                  let ind' = L.build_fptosi loc i32_t (id ^ "_ind") builder in
+                  let elem = L.build_in_bounds_gep arr [| ind' |] (id ^ "_ind") builder in
+                  ignore (L.build_store sexp' elem builder)
+              | _ -> raise (Failure internal_err)
+          ); builder
       | SIf (prd, if_block, else_block) ->
           let bool_val = build_expr builder prd in
           let merge_bb = L.append_block context "merge_if" the_func in
@@ -206,7 +214,7 @@ let translate (binds, sfuncs): L.llmodule =
       | SReturn sexp -> 
           ignore (
             if fn.srtype = None then L.build_ret_void builder
-            else L.build_ret (build_expr builder sexp) builder
+            else L.build_ret (build_expr builder (snd sexp)) builder
           ); builder
       | _ -> raise (Failure "unimplemented")
     and do_block scope bb block = 

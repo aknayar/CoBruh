@@ -6,12 +6,12 @@ and sx =
   | SBoolLit of bool
   | SCharLit of char
   | SStringLit of string
-  | SArrayLit of sx option * sx list option
+  | SArrayLit of dtype * sx option * sx list option
   | SId of string * int
   | SElem of string * int * sx
   | SBinop of sx * bop * sx
   | SUnop of uop * sx
-  | SCall of string * sx list
+  | SCall of string * sexpr list
 
 type sstmt = 
     SExpr of sx

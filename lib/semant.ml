@@ -71,7 +71,7 @@ let check (binds, funcs, stmts): sprogram =
             fun item ->
               if fst item <> typ then raise (Failure (inconsistent_array_err typ (fst item)))
               else snd item
-          ) sarr in (Array typ, SArrayLit (None, Some res))
+          ) sarr in (Array typ, SArrayLit (typ, None, Some res))
       | Id id -> 
           let rec find_id ind sc = 
             match sc with
@@ -141,7 +141,7 @@ let check (binds, funcs, stmts): sprogram =
                   else if passed_dtype <> fst fn_param && not (fst fn_param = Any) then raise (
                     Failure (mismatched_func_args_err id (string_of_dtype (fst fn_param)) (string_of_dtype passed_dtype))
                   )
-                  else passed_sexpr
+                  else (passed_dtype, passed_sexpr)
               ) passed_params fn_params in (fn_rtype, SCall (id, res))
     in
 
@@ -200,8 +200,8 @@ let check (binds, funcs, stmts): sprogram =
             if Hashtbl.mem curr_scope id then
               let prev_typ = Hashtbl.find curr_scope id in
               if prev_typ <> arr_typ then raise (Failure (invalid_assignment_err id prev_typ arr_typ))
-              else SReassign (SId (id, 0), SArrayLit (Some n_sx, None))
-            else let _ = Hashtbl.add curr_scope id arr_typ in SInit (arr_typ, id, SArrayLit (Some n_sx, None))
+              else SReassign (SId (id, 0), SArrayLit (typ, Some n_sx, None))
+            else let _ = Hashtbl.add curr_scope id arr_typ in SInit (arr_typ, id, SArrayLit (typ, Some n_sx, None))
       | If (prd, if_block, else_block) -> 
           let (prd_typ, prd_sx) = check_expr prd in
           if prd_typ <> Bool then raise (Failure (invalid_if_err (string_of_dtype prd_typ)))
