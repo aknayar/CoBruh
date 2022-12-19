@@ -1,0 +1,3 @@
+string a is ""
+string b is ""
+shout(a - b)

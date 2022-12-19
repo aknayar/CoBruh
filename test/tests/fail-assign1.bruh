@@ -1,0 +1,5 @@
+i is 42
+i is 10
+b is true
+b is false
+i is false # Fail: assigning a bool to an integer

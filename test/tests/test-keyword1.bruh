@@ -1,0 +1,10 @@
+define looping(number amount -> number):
+  ind is 0
+  loop true:
+    ind is ind + 1
+    if ind > number:
+      stop
+
+  return ind
+
+shout(looping(10))

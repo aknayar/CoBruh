@@ -1,0 +1,1 @@
+Error in semantics: variables can be assigned to only one type, but a is assigned to both boolean and number

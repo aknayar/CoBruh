@@ -1,0 +1,8 @@
+define reverse(number n -> number):
+  if (n == 0):
+    return 0
+  number res is []
+  loop n > 0:
+    res is res * 10 + n % 10
+    n is (n - n % 10) / 10
+  return res

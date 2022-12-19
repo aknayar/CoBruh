@@ -1,0 +1,1 @@
+Error in semantics: variables can be assigned to only one type, but i is assigned to both number and boolean

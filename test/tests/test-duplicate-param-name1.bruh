@@ -1,0 +1,2 @@
+define foo(number bro, number bro -> number):
+  return bro + bro + bro
