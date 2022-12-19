@@ -29,7 +29,6 @@ let nonguaranteed_return_err name = "function " ^ name ^ " is not guaranteed to 
 let reserved_function_name_err name = "function name " ^ name ^ " is reserved"
 let return_in_none_err name typ = "function " ^ name ^ " has none return type but returns " ^ typ
 let unequal_func_args_count_err name exp act = "function call to " ^ name ^ " expects " ^ exp ^ " arguments but got " ^ act
-let unreachable_loop_code_err = "loop has unreachable code after a stop or continue"
 
 let internal_err = "internal error"
 let unimplemented_err = "unimplemented"
@@ -67,8 +66,7 @@ let check (binds, funcs, stmts): sprogram =
 
   let check_func fn = 
     let scopes = ref [globals] in
-    let loop_layer = ref 0  
-    and is_loop_skipped = ref false in
+    let loop_layer = ref 0 in
     
     let rec check_expr = function
         NumberLit num -> (Number, SNumberLit num)
@@ -145,89 +143,86 @@ let check (binds, funcs, stmts): sprogram =
               ) passed_params fn_params in (fn_rtype, SECall (id, res))
     in
 
-    let rec check_stmt statement =
-      if !is_loop_skipped then raise (Failure (unreachable_loop_code_err)) 
-      else match statement with
-          Assign (typ, id, exp) -> 
-            let (exp_typ, exp_sx) = check_expr exp in 
-            if exp_typ = None then raise (Failure (none_assignment_err id))
-            else if exp_typ <> typ then raise (Failure (invalid_assignment_err id exp_typ typ))
-            else 
-              let curr_scope = List.hd !scopes in
-              if Hashtbl.mem curr_scope id then
-                let prev_dtype = Hashtbl.find curr_scope id in
-                if prev_dtype <> typ then raise (Failure (invalid_assignment_err id typ prev_dtype))
-                else SReassign (SId (id, 0), exp_sx)
-              else let _ = Hashtbl.add curr_scope id typ in SInit (typ, id, exp_sx)
-        | InferAssign (item, exp) -> 
-            let item' = try Some (check_expr item) with Failure _ -> None
-            and (exp_typ, exp_sx) = check_expr exp in 
-            (
-              match item with
-                  Id id -> 
-                    if exp_typ = None then raise (Failure (none_assignment_err id)) 
-                    else (
-                      match item' with
-                          Some (typ', sid) -> (
-                            match sid with
-                                SId _ -> 
-                                  if typ' <> exp_typ then raise (Failure (invalid_assignment_err id typ' exp_typ))
-                                  else SReassign (sid, exp_sx)
-                              | _ -> raise (Failure internal_err)
-                          )
-                        | None -> let _ = Hashtbl.add (List.hd !scopes) id exp_typ in SInit (exp_typ, id, exp_sx)
-                    )
-                | Elem (ele, _) ->
-                    (
-                      match ele with
-                        Id id -> 
-                          if exp_typ = None then raise (Failure (none_assignment_err id))
-                          else (
-                            match item' with
-                              Some (typ', selem) -> (
-                                match selem with
-                                    SElem _ -> 
-                                      if typ' <> exp_typ then raise (Failure (invalid_assignment_err id typ' exp_typ))
-                                      else SReassign (selem, exp_sx)
-                                  | _ -> raise (Failure internal_err)
-                              )
-                            | None -> raise (Failure (missing_id_err id))
-                          )
-                      | _ -> raise (Failure internal_err)
-                    )
-                | _ -> raise (Failure internal_err)
-            )
-        | Alloc (typ, n, id) -> 
-            let arr_typ = Array typ 
-            and (n_typ, n_sx) = check_expr n in 
-            if n_typ <> Number then raise (Failure (invalid_array_alloc_err id n_typ))
-            else 
-              let curr_scope = List.hd !scopes in
-              if Hashtbl.mem curr_scope id then
-                let prev_typ = Hashtbl.find curr_scope id in
-                if prev_typ <> arr_typ then raise (Failure (invalid_assignment_err id prev_typ arr_typ))
-                else SReassign (SId (id, 0), SArrayLit (typ, Some n_sx, None))
-              else let _ = Hashtbl.add curr_scope id arr_typ in SInit (arr_typ, id, SArrayLit (typ, Some n_sx, None))
-        | If (prd, if_block, else_block) -> 
-            let (prd_typ, prd_sx) = check_expr prd in
-            if prd_typ <> Bool then raise (Failure (invalid_if_err (string_of_dtype prd_typ)))
-            else 
-              let if_sstmts = check_block (Hashtbl.create (List.length if_block)) if_block in
-              let else_sstmts = check_block (Hashtbl.create (List.length else_block)) else_block in
-              SIf (prd_sx, if_sstmts, else_sstmts)
-        | CondLoop (prd, block) ->
-            let (prd_typ, prd_sx) = check_expr prd in
-            if prd_typ <> Bool then raise (Failure (invalid_cond_loop_err (string_of_dtype prd_typ)))
-            else
-              let _ = loop_layer := !loop_layer + 1 in
-              let block_sstmts = check_block (Hashtbl.create (List.length block)) block in
-              let _ = loop_layer := !loop_layer - 1 in
-              let _ = is_loop_skipped := false in
-              SCondLoop (prd_sx, block_sstmts)
-        | Return exp -> SReturn (check_expr exp)
-        | Continue -> if !loop_layer = 0 then raise (Failure loop_keyword_outside_loop_err) else (is_loop_skipped := true; SContinue)
-        | Stop -> if !loop_layer = 0 then raise (Failure loop_keyword_outside_loop_err) else (is_loop_skipped := true; SStop)
-        | SCall (id, params) -> SSCall (snd (check_expr (ECall (id, params))))
+    let rec check_stmt = function
+        Assign (typ, id, exp) -> 
+          let (exp_typ, exp_sx) = check_expr exp in 
+          if exp_typ = None then raise (Failure (none_assignment_err id))
+          else if exp_typ <> typ then raise (Failure (invalid_assignment_err id exp_typ typ))
+          else 
+            let curr_scope = List.hd !scopes in
+            if Hashtbl.mem curr_scope id then
+              let prev_dtype = Hashtbl.find curr_scope id in
+              if prev_dtype <> typ then raise (Failure (invalid_assignment_err id typ prev_dtype))
+              else SReassign (SId (id, 0), exp_sx)
+            else let _ = Hashtbl.add curr_scope id typ in SInit (typ, id, exp_sx)
+      | InferAssign (item, exp) -> 
+          let item' = try Some (check_expr item) with Failure _ -> None
+          and (exp_typ, exp_sx) = check_expr exp in 
+          (
+            match item with
+                Id id -> 
+                  if exp_typ = None then raise (Failure (none_assignment_err id)) 
+                  else (
+                    match item' with
+                        Some (typ', sid) -> (
+                          match sid with
+                              SId _ -> 
+                                if typ' <> exp_typ then raise (Failure (invalid_assignment_err id typ' exp_typ))
+                                else SReassign (sid, exp_sx)
+                            | _ -> raise (Failure internal_err)
+                        )
+                      | None -> let _ = Hashtbl.add (List.hd !scopes) id exp_typ in SInit (exp_typ, id, exp_sx)
+                  )
+              | Elem (ele, _) ->
+                  (
+                    match ele with
+                      Id id -> 
+                        if exp_typ = None then raise (Failure (none_assignment_err id))
+                        else (
+                          match item' with
+                            Some (typ', selem) -> (
+                              match selem with
+                                  SElem _ -> 
+                                    if typ' <> exp_typ then raise (Failure (invalid_assignment_err id typ' exp_typ))
+                                    else SReassign (selem, exp_sx)
+                                | _ -> raise (Failure internal_err)
+                            )
+                          | None -> raise (Failure (missing_id_err id))
+                        )
+                    | _ -> raise (Failure internal_err)
+                  )
+              | _ -> raise (Failure internal_err)
+          )
+      | Alloc (typ, n, id) -> 
+          let arr_typ = Array typ 
+          and (n_typ, n_sx) = check_expr n in 
+          if n_typ <> Number then raise (Failure (invalid_array_alloc_err id n_typ))
+          else 
+            let curr_scope = List.hd !scopes in
+            if Hashtbl.mem curr_scope id then
+              let prev_typ = Hashtbl.find curr_scope id in
+              if prev_typ <> arr_typ then raise (Failure (invalid_assignment_err id prev_typ arr_typ))
+              else SReassign (SId (id, 0), SArrayLit (typ, Some n_sx, None))
+            else let _ = Hashtbl.add curr_scope id arr_typ in SInit (arr_typ, id, SArrayLit (typ, Some n_sx, None))
+      | If (prd, if_block, else_block) -> 
+          let (prd_typ, prd_sx) = check_expr prd in
+          if prd_typ <> Bool then raise (Failure (invalid_if_err (string_of_dtype prd_typ)))
+          else 
+            let if_sstmts = check_block (Hashtbl.create (List.length if_block)) if_block in
+            let else_sstmts = check_block (Hashtbl.create (List.length else_block)) else_block in
+            SIf (prd_sx, if_sstmts, else_sstmts)
+      | CondLoop (prd, block) ->
+          let (prd_typ, prd_sx) = check_expr prd in
+          if prd_typ <> Bool then raise (Failure (invalid_cond_loop_err (string_of_dtype prd_typ)))
+          else
+            let _ = loop_layer := !loop_layer + 1 in
+            let block_sstmts = check_block (Hashtbl.create (List.length block)) block in
+            let _ = loop_layer := !loop_layer - 1 in
+            SCondLoop (prd_sx, block_sstmts)
+      | Return exp -> SReturn (check_expr exp)
+      | Continue -> if !loop_layer = 0 then raise (Failure loop_keyword_outside_loop_err) else SContinue
+      | Stop -> if !loop_layer = 0 then raise (Failure loop_keyword_outside_loop_err) else SStop
+      | SCall (id, params) -> SSCall (snd (check_expr (ECall (id, params))))
     and check_block scope block = 
       let _ = scopes := scope::(!scopes) in
       let res = List.map check_stmt block in
