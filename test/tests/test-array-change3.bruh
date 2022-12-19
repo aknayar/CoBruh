@@ -1,0 +1,5 @@
+a is [true, false, true]
+a[0] is true
+a[1] is false
+a[2] is true
+say(a[1])

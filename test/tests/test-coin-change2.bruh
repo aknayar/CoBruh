@@ -1,0 +1,27 @@
+define coin_change(number[] coins, number num_coins, number amount -> number):
+  number[amount + 1] dp
+  number ind is 0
+  loop ind < amount + 1:
+    dp[ind] is amount + 1
+    ind is ind + 1
+  
+  ind is 1
+  loop ind < amount + 1:
+    number coin_ind is 0
+    loop coin_ind < num_coins:
+      number coin is coins[coin_ind]
+      if coin == ind:
+        dp[ind] is 1
+      else:
+        if ind - coin > 0:
+          if 1 + dp[ind - coin] < dp[ind]:
+            dp[ind] is 1 + dp[ind - coin]
+      coin_ind is coin_ind + 1
+    ind is ind + 1
+
+  if dp[amount] =/= amount + 1:
+    return dp[amount]
+  else:
+    return -1
+
+shout(coin_change([2], 1, 3))
