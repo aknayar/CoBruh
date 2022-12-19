@@ -15,15 +15,21 @@ if __name__ == "__main__":
         file_loc = os.path.join(TEST_DIR, '.'.join(filename.split('.')[:-1] + ["bruh"]))
 
         if filename.endswith(".err") or filename.endswith(".out"):
+            result = None
             try:
-                result = subprocess.run(f"{COMPILER_DIR} -c {file_loc}".split(), stdout=subprocess.PIPE)
+                result = subprocess.run(f"{COMPILER_DIR} -c {file_loc}".split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             except FileNotFoundError:
                 raise Exception('Compiler not found. Try running "dune build" from the CoBruh directory')
+            # finally:
+                # print("result: ", result.stdout.decode("utf-8") )
             if filename.endswith(".out"):
                 with open(LLVM_OUT, 'w') as writer:
                     writer.write(result.stdout.decode("utf-8"))
                 result = subprocess.run(f"lli {LLVM_OUT}".split(), stdout=subprocess.PIPE)
-            result = result.stdout.decode("utf-8") 
+            if result.stderr:
+                result = result.stderr.decode("utf-8")
+            else:
+                result = result.stdout.decode("utf-8")
             print(f"Running test case {(i + 1) // 2} ({filename}):", end=" ")
             num_total += 1
             with open(file_ans_loc, 'r') as f:
