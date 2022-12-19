@@ -5,4 +5,4 @@
    (alias ../all)
    (source_tree tests)
  )
- (action (run python3 testall.py)))
+ (action (run python3 testall.py ext)))
