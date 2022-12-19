@@ -120,11 +120,17 @@ let check (binds, funcs, stmts): sprogram =
               | Abs -> (
                   match exp_typ with
                       (Number | Array _) -> Number
-                    | _ -> raise (Failure (invalid_unop_args_err "magnitude"))
+                    | _ -> raise (Failure (invalid_unop_args_err (string_of_dtype exp_typ)))
                 )
               | _ -> raise (Failure (invalid_unop_args_err (match op with Not -> "not" | Neg -> "negation" | Abs -> "magnitude")))
           ) in
-          (res_type, SUnop (op, exp_sx))
+          (match op with
+              Abs -> 
+                (match exp_typ with
+                    Number -> check_expr (ECall("abs", [exp]))
+                  | Array _ -> (res_type, SUnop (op, exp_sx))
+                  | _ -> raise (Failure (invalid_unop_args_err (string_of_dtype exp_typ))))
+            | _ -> (res_type, SUnop (op, exp_sx)))
       | ECall (id, passed_params) -> 
           let (fn_params, fn_rtype) = 
             if not (Hashtbl.mem sfuncs id) then raise (Failure (missing_func_err id))

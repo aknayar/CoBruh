@@ -33,6 +33,8 @@ let translate (binds, sfuncs): L.llmodule =
   in
 
   let globals = Hashtbl.create (List.length binds) in
+  let globals_size = Hashtbl.create 1 in
+  Hashtbl.add globals_size "" 0.;
   let to_be_malloced = ref [] in
   List.iter (
     fun (typ, name) -> 
@@ -59,6 +61,7 @@ let translate (binds, sfuncs): L.llmodule =
 
   let build_func_body fn = 
     let scopes = ref [globals] in
+    let scopes_size = ref [globals_size] in
 
     let (the_func, _) = Hashtbl.find all_funcs fn.sfname in
     let builder = L.builder_at_end context (L.entry_block the_func) in
@@ -147,10 +150,13 @@ let translate (binds, sfuncs): L.llmodule =
           let e' = build_expr builder e in
           (
             match op with
-                Not -> L.build_not
-              | Neg -> L.build_fneg
-              | _   -> raise (Failure "unimplemented")
-          ) e' "tmp" builder
+                Not -> L.build_not e' "tmp" builder
+              | Neg -> L.build_fneg e' "tmp" builder
+              | Abs -> 
+                match e with
+                    SId (id, sc) -> L.const_float (lltype_of_dtype Number) (Hashtbl.find (List.nth !scopes_size sc) id)
+                  | _ -> raise (Failure internal_err)
+          ) 
       | SECall ("say", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false false ; (build_expr builder (snd e)) |] "" builder
       | SECall ("shout", [e]) -> L.build_call printf_func [| format_string_of_dtype (fst e) false true ; (build_expr builder (snd e)) |] "" builder
       | SECall ("inputc", []) -> read_typ Char
@@ -170,6 +176,17 @@ let translate (binds, sfuncs): L.llmodule =
 
     let rec build_stmt builder = function
         SInit (typ, id, sexp) -> 
+          (match typ with
+              Array _ -> (match sexp with
+                SArrayLit (_, n, _) -> 
+                  (match n with
+                      Some n' -> 
+                        (match n' with 
+                            SNumberLit size -> Hashtbl.add (List.hd !scopes_size) id size
+                          | _ -> raise (Failure "here"))
+                    | _ -> ())
+                | _ -> raise (Failure internal_err))
+            | _ -> ());
           let local = L.build_alloca (lltype_of_dtype typ) id builder
           in Hashtbl.add (List.hd !scopes) id local;
           let sexp' = build_expr builder sexp in
