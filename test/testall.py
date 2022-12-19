@@ -8,20 +8,19 @@ if __name__ == "__main__":
     LLVM_OUT = "test_tmp.ll"
     num_passed, num_total = 0, 0
     directory = os.fsencode(TEST_DIR)
-        
-    for i, file in enumerate(os.listdir(directory)):
+    i = 0
+    for file in os.listdir(directory):
         filename = os.fsdecode(file)
         file_ans_loc = os.path.join(TEST_DIR, filename)
         file_loc = os.path.join(TEST_DIR, '.'.join(filename.split('.')[:-1] + ["bruh"]))
 
         if filename.endswith(".err") or filename.endswith(".out"):
+            i += 1
             result = None
             try:
                 result = subprocess.run(f"{COMPILER_DIR} -c {file_loc}".split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             except FileNotFoundError:
                 raise Exception('Compiler not found. Try running "dune build" from the CoBruh directory')
-            # finally:
-                # print("result: ", result.stdout.decode("utf-8") )
             if filename.endswith(".out"):
                 with open(LLVM_OUT, 'w') as writer:
                     writer.write(result.stdout.decode("utf-8"))
@@ -30,7 +29,7 @@ if __name__ == "__main__":
                 result = result.stderr.decode("utf-8")
             else:
                 result = result.stdout.decode("utf-8")
-            print(f"Running test case {(i + 1) // 2} ({filename}):", end=" ")
+            print(f"Running test case {i} ({filename}):", end=" ")
             num_total += 1
             with open(file_ans_loc, 'r') as f:
                 ans = f.read()
