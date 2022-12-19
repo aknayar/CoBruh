@@ -16,6 +16,7 @@ let invalid_if_err typ = "if expects boolean but got " ^ typ
 let invalid_indexing_err typ = "only arrays can be indexed, but " ^ string_of_dtype typ ^ " is indexed"
 let invalid_iter_loop_err typs = "iterative loop expects (number, number, number) but got (" ^ String.concat ", " typs ^ ")"
 let invalid_unop_args_err op = "invalid argument for unary operator " ^ op
+let loop_keyword_outside_loop = "stop and continue cannot appear outside a loop, but one does"
 let mismatched_func_args_err name exp act = "function call to " ^ name ^ " expected " ^ exp ^ " but got " ^ act
 let mismatched_bop_args_err op = "mismatched arguments for binary operator " ^ op
 let mismatched_return_err name = "incorrect function return type for " ^ name
@@ -28,6 +29,7 @@ let nonguaranteed_return_err name = "function " ^ name ^ " is not guaranteed to 
 let reserved_function_name_err name = "function name " ^ name ^ " is reserved"
 let return_in_none_err name typ = "function " ^ name ^ " has none return type but returns " ^ typ
 let unequal_func_args_count_err name exp act = "function call to " ^ name ^ " expects " ^ exp ^ " arguments but got " ^ act
+let unreachable_loop_code_err = "loop has unreachable code after a stop or continue"
 
 let internal_err = "internal error"
 let unimplemented_err = "unimplemented"
@@ -65,6 +67,8 @@ let check (binds, funcs, stmts): sprogram =
 
   let check_func fn = 
     let scopes = ref [globals] in
+    let loop_layer = ref 0  
+    and is_loop_skipped = ref false in
     
     let rec check_expr = function
         NumberLit num -> (Number, SNumberLit num)
@@ -141,7 +145,9 @@ let check (binds, funcs, stmts): sprogram =
               ) passed_params fn_params in (fn_rtype, SECall (id, res))
     in
 
-    let rec check_stmt = function
+    let rec check_stmt statement =
+      if !is_loop_skipped then raise (Failure (unreachable_loop_code_err)) 
+      else match statement with
         Assign (typ, id, exp) -> 
           let (exp_typ, exp_sx) = check_expr exp in 
           if exp_typ = None then raise (Failure (none_assignment_err id))
@@ -213,11 +219,14 @@ let check (binds, funcs, stmts): sprogram =
           let (prd_typ, prd_sx) = check_expr prd in
           if prd_typ <> Bool then raise (Failure (invalid_cond_loop_err (string_of_dtype prd_typ)))
           else
+            let _ = loop_layer := !loop_layer + 1 in
             let block_sstmts = check_block (Hashtbl.create (List.length block)) block in
+            let _ = loop_layer := !loop_layer - 1 in
+            let _ = is_loop_skipped := false in
             SCondLoop (prd_sx, block_sstmts)
       | Return exp -> SReturn (check_expr exp)
-      | Continue -> SContinue
-      | Stop -> SStop
+      | Continue -> if !loop_layer = 0 then raise (Failure loop_keyword_outside_loop) else (is_loop_skipped := true; SContinue)
+      | Stop -> if !loop_layer = 0 then raise (Failure loop_keyword_outside_loop) else (is_loop_skipped := true; SStop)
       | SCall (id, params) -> SSCall (snd (check_expr (ECall (id, params))))
     and check_block scope block = 
       let _ = scopes := scope::(!scopes) in
