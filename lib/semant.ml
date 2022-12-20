@@ -29,6 +29,7 @@ let nonguaranteed_return_err name = "function " ^ name ^ " is not guaranteed to 
 let reserved_function_name_err name = "function name " ^ name ^ " is reserved"
 let return_in_none_err name typ = "function " ^ name ^ " has none return type but returns " ^ typ
 let unequal_func_args_count_err name exp act = "function call to " ^ name ^ " expects " ^ exp ^ " arguments but got " ^ act
+let unsupported_multidim_array_err = "multidimensional arrays are not supported"
 
 let internal_err = "internal error"
 let unimplemented_err = "unimplemented"
@@ -76,6 +77,11 @@ let check (binds, funcs, stmts): sprogram =
       | ArrayLit arr -> 
           let sarr = List.map check_expr arr in 
           let typ = fst (List.hd sarr) in
+          (
+            match typ with
+                Array _ -> raise (Failure unsupported_multidim_array_err)
+              | _ -> ()
+          );
           let res = List.map (
             fun item ->
               if fst item <> typ then raise (Failure (inconsistent_array_err typ (fst item)))

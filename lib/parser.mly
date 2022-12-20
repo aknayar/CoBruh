@@ -75,7 +75,7 @@ fcall:
 
 expr:
     atom                      { $1 }
-  | LSQUARE atom_list RSQUARE { ArrayLit $2 }
+  | LSQUARE expr_list RSQUARE { ArrayLit $2 }
   | ID                        { Id $1 }
   | expr LSQUARE expr RSQUARE { Elem ($1, $3) }
   | expr PLUS expr            { Binop ($1, Plus, $3) }
@@ -104,9 +104,9 @@ atom:
   | CHARLIT   { CharLit $1 }
   | STRINGLIT { StringLit $1 }
 
-atom_list:
+/* atom_list:
     atom                 { [$1] }
-  | atom COMMA atom_list { $1::$3 }
+  | atom COMMA atom_list { $1::$3 } */
 
 expr_list_opt:
     /* nothing */ { [] }
