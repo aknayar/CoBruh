@@ -104,10 +104,6 @@ atom:
   | CHARLIT   { CharLit $1 }
   | STRINGLIT { StringLit $1 }
 
-/* atom_list:
-    atom                 { [$1] }
-  | atom COMMA atom_list { $1::$3 } */
-
 expr_list_opt:
     /* nothing */ { [] }
   | expr_list     { $1 }
