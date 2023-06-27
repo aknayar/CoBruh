@@ -1,5 +1,5 @@
 define reverse(number n -> number):
-  number res is 0
+  res is 0
   loop n > 0:
     res is res * 10 + n % 10
     n is (n - n % 10) / 10
