@@ -85,7 +85,7 @@ expr:
   | expr DIV expr             { Binop ($1, Div, $3) }
   | expr MOD expr             { Binop ($1, Mod, $3) }
   | MINUS expr %prec UMINUS   { Unop (Neg, $2) }
-  | PIPE expr PIPE            { ECall ("abs", [$2]) }
+  | PIPE expr PIPE            { Unop (Abs, $2) }
   | expr EQ expr              { Binop ($1, Eq, $3) }
   | expr NEQ expr             { Binop ($1, Neq, $3) }
   | expr LT expr              { Binop ($1, Less, $3) }
