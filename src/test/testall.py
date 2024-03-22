@@ -20,7 +20,7 @@ if __name__ == "__main__":
             try:
                 result = subprocess.run(f"{COMPILER_DIR} -c {file_loc}".split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             except FileNotFoundError:
-                raise Exception('Compiler not found. Try running "dune build" from the CoBruh directory')
+                raise FileNotFoundError('Compiler not found. Try running "dune build" in the src directory')
             if filename.endswith(".out"):
                 with open(LLVM_OUT, 'w') as writer:
                     writer.write(result.stdout.decode("utf-8"))
