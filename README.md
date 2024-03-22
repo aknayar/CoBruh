@@ -2,7 +2,7 @@
 
 Let's make a language with the readability of Python and the type safety of C!
 
-In order to generate IR from a input file, run `dune exec -- CoBruh -c <input_path> > main.ll` in the `src` directory. This will output the IR in a file called `main.ll`. In order to execute this code, run `lli main.ll`. 
+To generate IR from a input file, run `dune exec -- CoBruh -c <input_path> > main.ll` in the `src` directory. This will output the IR in a file called `main.ll`. To execute this code, run `lli main.ll`. 
 
 To run the unit tests, either run `dune test` in `src` or `python3 testall.py` in `src/test`.
 
